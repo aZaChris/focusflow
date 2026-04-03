@@ -3,7 +3,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 import { Canvas, Rect, Group, Line, vec } from '@shopify/react-native-skia';
 // Usa lo state React standard per l'animazione base Skia se Reanimated dà problemi di compatibilità,
 // ma qui applichiamo un approccio statico iniziale per garantire il rendering della scena.
-import PixerCharacter from './PixelCharacter';
+import PixelCharacter from './PixelCharacter';
 import ActivityBlock from './ActivityBlock';
 import { colors } from '../../constants/theme';
 import { useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
@@ -62,7 +62,7 @@ export default function TimelineCanvas() {
       />
 
       {/* Il Personaggio Principale "Ora" */}
-      <PixerCharacter x={PRESENT_X} y={GROUND_Y} />
+      <PixelCharacter x={PRESENT_X} y={GROUND_Y} />
     </Canvas>
   );
 }

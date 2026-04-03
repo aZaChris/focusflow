@@ -5,7 +5,7 @@ import TimelineCanvas from '../../components/timeline/TimelineCanvas';
 import VoiceRecorder from '../../components/journal/VoiceRecorder';
 import MoodPicker from '../../components/mood/MoodPicker';
 
-export default function TodayScreen() {
+function TodayScreen() {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<any>(null);
 
@@ -49,6 +49,8 @@ export default function TodayScreen() {
     </ScrollView>
   );
 }
+
+export default TodayScreen;
 
 const styles = StyleSheet.create({
   container: {

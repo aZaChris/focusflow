@@ -39,7 +39,8 @@
         {
           "microphonePermission": "Consenti a FocusFlow di registrare l'audio del tuo diario."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
