@@ -1,36 +1,50 @@
 import { Platform } from 'react-native';
+import Purchases from 'react-native-purchases';
 
 /**
- * Nota: RevenueCat richiede react-native-purchases e una build "Custom Dev Client" (non funziona in Expo Go classico).
- * Per attivarlo:
- * 1. npx expo install react-native-purchases
- * 2. Inserisci le tue chiavi API da RevenueCat
- * 3. Crea una dev build con EAS (eas build --profile development)
+ * Gestione degli acquisti in-app tramite RevenueCat.
+ * 
+ * NOTA: RevenueCat richiede una build "Custom Dev Client" e non funziona nell'Expo Go standard.
+ * Le chiavi API devono essere caricate tramite file .env (EXPO_PUBLIC_...).
  */
 
+// Chiavi API caricate dalle variabili d'ambiente
 const APIKeys = {
-  apple: "REVENUECAT_APPLE_API_KEY",
-  google: "REVENUECAT_GOOGLE_API_KEY"
+  apple: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS || "",
+  google: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID || ""
 };
 
+/**
+ * Inizializza il modulo RevenueCat configurandolo per la piattaforma corrente.
+ * Deve essere chiamato all'avvio dell'app (es. in app/_layout.tsx).
+ */
 export const initRevenueCat = async () => {
-  // if (Platform.OS === 'ios') {
-  //   await Purchases.configure({ apiKey: APIKeys.apple });
-  // } else if (Platform.OS === 'android') {
-  //   await Purchases.configure({ apiKey: APIKeys.google });
-  // }
-  console.log("RevenueCat Inizializzato (MOCK)");
+  try {
+    if (Platform.OS === 'ios' && APIKeys.apple) {
+      await Purchases.configure({ apiKey: APIKeys.apple });
+      console.log("RevenueCat: Configurato con successo per iOS");
+    } else if (Platform.OS === 'android' && APIKeys.google) {
+      await Purchases.configure({ apiKey: APIKeys.google });
+      console.log("RevenueCat: Configurato con successo per Android");
+    } else {
+      console.warn("RevenueCat: Chiavi API mancanti o piattaforma non supportata.");
+    }
+  } catch (error) {
+    console.error("RevenueCat: Errore durante l'inizializzazione", error);
+  }
 };
 
-export const checkProStatus = async () => {
-  // try {
-  //   const customerInfo = await Purchases.getCustomerInfo();
-  //   if (typeof customerInfo.entitlements.active['pro'] !== "undefined") {
-  //     return true;
-  //   }
-  // } catch (e) {
-  //   console.warn("Errore controllo RevenueCat", e);
-  // }
-  console.log("Check Pro Status effettuato (MOCK) - Restituisce falso per testare il freemium");
-  return false;
+/**
+ * Verifica se l'utente ha un abbonamento 'pro' attivo.
+ * @returns {Promise<boolean>} Vero se l'utente è Pro, falso altrimenti.
+ */
+export const checkProStatus = async (): Promise<boolean> => {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    // Verifichiamo se l'entitlement 'pro' è presente tra quelli attivi
+    return typeof customerInfo.entitlements.active['pro'] !== "undefined";
+  } catch (e) {
+    console.warn("RevenueCat: Errore durante il controllo dello stato Pro", e);
+    return false;
+  }
 };

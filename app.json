@@ -34,13 +34,14 @@
     "scheme": "focusflow",
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      "expo-dev-client",
       [
         "expo-av",
         {
           "microphonePermission": "Consenti a FocusFlow di registrare l'audio del tuo diario."
         }
-      ],
-      "expo-secure-store"
+      ]
     ],
     "extra": {
       "router": {},
