@@ -1,47 +1,59 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, Text } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, Alert } from 'react-native';
 import TimelineCanvas from '../../components/timeline/TimelineCanvas';
 import VoiceRecorder from '../../components/journal/VoiceRecorder';
 import MoodPicker from '../../components/mood/MoodPicker';
 import { colors, typography } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
 
 /**
  * TodayScreen: La schermata principale dell'applicazione.
- * Offre una panoramica interattiva della giornata (Timeline), 
- * un diario vocale basato su AI e un selettore del mood.
  */
 function TodayScreen() {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<any>(null);
 
   /**
-   * Gestisce il risultato della registrazione vocale.
-   * @param text La trascrizione testuale del parlato.
-   * @param moodData Dati opzionali estratti dall'AI sull'umore.
+   * Gestisce il risultato della registrazione vocale e lo salva su Supabase.
    */
-  const handleTranscript = (text: string, moodData: any) => {
+  const handleTranscript = async (text: string, moodData: any) => {
     setTranscript(text);
     setAiSummary(moodData);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('journal_entries')
+        .insert([
+          {
+            user_id: user.id,
+            transcript: text,
+            ai_summary: moodData.summary
+          }
+        ]);
+
+      if (error) throw error;
+      
+      // Feedback silenzioso o log per confermare il salvataggio cloud
+      console.log("Diario salvato su Supabase");
+    } catch (error: any) {
+      console.error("Errore salvataggio diario:", error.message);
+      Alert.alert("Errore", "Il pensiero è stato visualizzato ma non è stato possibile salvarlo nel cloud.");
+    }
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Spacer superiore per il safe area / notch */}
       <View style={styles.headerSpacer} />
 
-      {/* 1. SEZIONE TIMELINE (Superiore)
-          Visualizza graficamente gli impegni e gli eventi su un canvas custom. */}
       <TimelineCanvas />
       
-      {/* 2. SEZIONE DIARIO (Centrale)
-          Contiene lo strumento di registrazione e i risultati della trascrizione AI. */}
       <View style={styles.journalSection}>
         <Text style={styles.sectionTitle}>Diario di Oggi</Text>
-        
-        {/* Componente per la registrazione audio con Whisper AI */}
         <VoiceRecorder onTranscriptFound={handleTranscript} />
 
-        {/* Visualizzazione della trascrizione se presente */}
         {transcript && (
           <View style={styles.transcriptBox}>
             <Text style={styles.transcriptText}>"{transcript}"</Text>
@@ -54,15 +66,12 @@ function TodayScreen() {
         )}
       </View>
 
-      {/* 3. SEZIONE MOOD CHECK (Inferiore)
-          Permette all'utente di selezionare rapidamente il proprio stato d'animo. */}
       <View style={styles.moodSection}>
         <Text style={styles.sectionTitle}>Come ti senti?</Text>
         <MoodPicker />
       </View>
 
-      {/* Padding finale per evitare che il contenuto finisca sotto le tab */}
-      <View style={{ height: 60 }} />
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
@@ -81,8 +90,8 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: colors.surface,
     marginHorizontal: 16,
-    borderRadius: 16,
-    marginTop: -20, // Sovrapposizione estetica sulla timeline
+    borderRadius: 24,
+    marginTop: -20,
     borderWidth: 1,
     borderColor: colors.border,
     shadowColor: "#000",
@@ -117,7 +126,7 @@ const styles = StyleSheet.create({
   },
   aiPill: {
     marginTop: 10,
-    backgroundColor: 'rgba(94, 211, 243, 0.1)', // Sfumatura azzurra basata sul tema
+    backgroundColor: 'rgba(200, 240, 74, 0.1)',
     padding: 10,
     borderRadius: 8,
   },

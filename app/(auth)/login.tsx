@@ -70,6 +70,14 @@ export default function LoginScreen() {
         <Text style={styles.buttonText}>{loading ? 'Accesso in corso...' : 'Log in'}</Text>
       </TouchableOpacity>
 
+      {/* Pulsante ACCEDI COME OSPITE (Dev mode) */}
+      <TouchableOpacity 
+        style={styles.guestButton} 
+        onPress={() => router.replace('/(tabs)/today')}
+      >
+        <Text style={styles.guestButtonText}>Accedi come Ospite (Dev Mode)</Text>
+      </TouchableOpacity>
+
       {/* Link per passare alla registrazione */}
       <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
         <Text style={styles.link}>Non hai un account? Registrati</Text>
@@ -86,7 +94,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center' 
   },
   title: { 
-    fontSize: 32, 
+    fontSize: 42, 
     fontFamily: typography.sans, 
     color: colors.accent, 
     textAlign: 'center', 
@@ -96,18 +104,23 @@ const styles = StyleSheet.create({
   input: { 
     backgroundColor: colors.surface, 
     color: colors.text, 
-    borderRadius: 8, 
-    padding: 15, 
+    borderRadius: 12, 
+    padding: 18, 
     marginBottom: 15, 
     borderWidth: 1, 
     borderColor: colors.border 
   },
   button: { 
     backgroundColor: colors.accent, 
-    padding: 15, 
-    borderRadius: 8, 
+    padding: 18, 
+    borderRadius: 15, 
     alignItems: 'center', 
-    marginTop: 10 
+    marginTop: 10,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4
   },
   buttonText: { 
     color: colors.bg, 
@@ -115,10 +128,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     fontSize: 16 
   },
+  guestButton: {
+    padding: 15,
+    marginTop: 15,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  guestButtonText: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   link: { 
     color: colors.text, 
     textAlign: 'center', 
-    marginTop: 20, 
+    marginTop: 25, 
     textDecorationLine: 'underline' 
   }
 });

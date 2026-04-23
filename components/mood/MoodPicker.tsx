@@ -1,59 +1,65 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { colors, typography } from '../../constants/theme';
-
-/**
- * Costanti per le opzioni dell'umore.
- */
-const MOODS = [
-  { label: 'Pessimo', emoji: '😢', score: 1 },
-  { label: 'Giù', emoji: '🫤', score: 2 },
-  { label: 'Neutro', emoji: '😐', score: 3 },
-  { label: 'Bene', emoji: '🙂', score: 4 },
-  { label: 'Ottimo', emoji: '🤩', score: 5 },
-];
-
-/**
- * Costanti per le opzioni dell'energia.
- */
-const ENERGIES = [
-  { label: 'Esausto', emoji: '🔋', score: 1 },
-  { label: 'Stanco', emoji: '🪫', score: 2 },
-  { label: 'Normale', emoji: '🔌', score: 3 },
-  { label: 'Attivo', emoji: '⚡', score: 4 },
-  { label: 'Carico', emoji: '🚀', score: 5 },
-];
+import { supabase } from '../../lib/supabase';
 
 /**
  * MoodPicker: Componente per il check-in rapido dello stato emotivo e dei livelli di energia.
- * Permette all'utente di registrare come si sente in pochi tap.
  */
 export default function MoodPicker() {
   const [mood, setMood] = useState<number | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  /**
-   * Salva i dati del check-in.
-   * In produzione, questi dati vengono inviati al database Supabase.
-   */
-  const handleSave = () => {
-    if (mood && energy) {
-      // 🛠 MOCK: Qui andrebbe supabase.from('mood_logs').insert(...)
-      // Utilizziamo un Alert per confermare l'azione all'utente.
-      Alert.alert(
-        'Check-in Completato', 
-        'Il tuo log di umore ed energia è stato salvato con successo!'
-      );
+  const MOODS = [
+    { label: 'Pessimo', emoji: '😢', score: 1 },
+    { label: 'Giù', emoji: '🫤', score: 2 },
+    { label: 'Neutro', emoji: '😐', score: 3 },
+    { label: 'Bene', emoji: '🙂', score: 4 },
+    { label: 'Ottimo', emoji: '🤩', score: 5 },
+  ];
+
+  const ENERGIES = [
+    { label: 'Esausto', emoji: '🔋', score: 1 },
+    { label: 'Stanco', emoji: '🪫', score: 2 },
+    { label: 'Normale', emoji: '🔌', score: 3 },
+    { label: 'Attivo', emoji: '⚡', score: 4 },
+    { label: 'Carico', emoji: '🚀', score: 5 },
+  ];
+
+  const handleSave = async () => {
+    if (!mood || !energy) return;
+
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Reset dei selettori dopo il salvataggio
+      if (!user) throw new Error('Devi essere loggato per salvare il mood');
+
+      const { error } = await supabase
+        .from('mood_logs')
+        .insert([
+          { 
+            user_id: user.id, 
+            mood_score: mood, 
+            energy_score: energy 
+          }
+        ]);
+
+      if (error) throw error;
+
+      Alert.alert('Check-in Completato', 'Il tuo stato d\'animo è stato registrato!');
       setMood(null);
       setEnergy(null);
+    } catch (error: any) {
+      Alert.alert('Errore', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Sezione Umore */}
       <Text style={styles.title}>Stato d'Animo</Text>
       <View style={styles.row}>
         {MOODS.map((m) => (
@@ -68,7 +74,6 @@ export default function MoodPicker() {
         ))}
       </View>
 
-      {/* Sezione Energia */}
       <Text style={styles.title}>Livello di Energia</Text>
       <View style={styles.row}>
         {ENERGIES.map((e) => (
@@ -83,10 +88,17 @@ export default function MoodPicker() {
         ))}
       </View>
 
-      {/* Pulsante di Salvataggio: Appare solo quando entrambi i valori sono selezionati */}
       {mood && energy && (
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveText}>Salva Check-in</Text>
+        <TouchableOpacity 
+          style={[styles.saveBtn, loading && { opacity: 0.7 }]} 
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={colors.bg} />
+          ) : (
+            <Text style={styles.saveText}>Salva Check-in</Text>
+          )}
         </TouchableOpacity>
       )}
     </View>
@@ -94,9 +106,7 @@ export default function MoodPicker() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    marginTop: 5 
-  },
+  container: { marginTop: 5 },
   row: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -118,18 +128,21 @@ const styles = StyleSheet.create({
   },
   activeEmoji: { 
     borderColor: colors.accent, 
-    backgroundColor: 'rgba(94, 211, 243, 0.15)', // Sfumatura azzurra del tema
-    transform: [{ scale: 1.15 }] 
+    backgroundColor: 'rgba(200, 240, 74, 0.15)',
+    transform: [{ scale: 1.1 }] 
   },
-  emojiText: { 
-    fontSize: 24 
-  },
+  emojiText: { fontSize: 24 },
   saveBtn: { 
     backgroundColor: colors.accent, 
     padding: 15, 
-    borderRadius: 12, 
+    borderRadius: 15, 
     alignItems: 'center',
     marginTop: 10,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4
   },
   saveText: { 
     color: colors.bg, 

@@ -14,7 +14,7 @@ FocusFlow è un'applicazione per la gestione quotidiana e il benessere mentale, 
 
 - **Frontend**: React Native, Expo (SDK 51+), Expo Router.
 - **Backend**: Supabase (Database & Auth).
-- **AI**: OpenAI (Whisper per trascrizione, GPT per riassunti).
+- **AI**: OpenAI (Whisper per trascrizione, GPT per riassunti). *Nota: Attualmente l'integrazione è simulata (mocked) nel codice per facilitare lo sviluppo senza consumare crediti API.*
 - **Pagamenti**: RevenueCat.
 - **Grafica**: React Native Skia, Reanimated.
 

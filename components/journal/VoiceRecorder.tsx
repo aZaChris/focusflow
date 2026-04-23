@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Audio } from 'expo-av';
+// import { Audio } from 'expo-av'; // DISABILITATO PER EXPO GO
 import { colors, typography } from '../../constants/theme';
 
 /**
@@ -13,76 +13,34 @@ interface VoiceRecorderProps {
 
 /**
  * VoiceRecorder: Componente per la registrazione dei pensieri quotidiani.
- * Gestisce l'accesso al microfono, la registrazione audio e simula il processamento
- * tramite intelligenza artificiale per generare trascrizioni e riassunti.
+ * (Mockato per evitare crash con expo-av su Expo Go)
  */
 export default function VoiceRecorder({ onTranscriptFound }: VoiceRecorderProps) {
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   /**
-   * Fallback: Se il modulo Audio non è disponibile (es. problemi di build nativa),
-   * avvisa l'utente invece di crashare.
-   */
-  if (!Audio || !Audio.Recording) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.fallbackText}>Registratore vocale non disponibile.</Text>
-      </View>
-    );
-  }
-
-  /**
-   * Avvia una nuova sessione di registrazione audio.
-   * Richiede i permessi all'utente se non già concessi.
+   * Avvia una finta registrazione.
    */
   async function startRecording() {
-    try {
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      setRecording(recording);
-    } catch (err) {
-      console.error('Errore durante l\'avvio della registrazione:', err);
-    }
+    setRecording(true);
   }
 
   /**
-   * Termina la registrazione corrente e simula l'invio al server AI.
+   * Termina la finta registrazione e simula l'invio al server AI.
    */
   async function stopRecording() {
     setIsProcessing(true);
-    if (recording) {
-      try {
-        await recording.stopAndUnloadAsync();
-        const uri = recording.getURI();
-        setRecording(null);
-        
-        console.log('Audio salvato localmente:', uri);
-        
-        /**
-         * 🔄 SIMULAZIONE PROCESSO AI:
-         * In produzione, qui invieremmo l'audio a un'API Whisper per la trascrizione
-         * e poi a un'API GPT per l'analisi del contenuto.
-         */
-        setTimeout(() => {
-          setIsProcessing(false);
-          onTranscriptFound(
-            "Oggi mi sento molto meglio, ho finito quasi tutti i compiti del lavoro. Un po' di ansia per domani, ma gestibile.",
-            { summary: "Senso di realizzazione unito a lieve ansia anticipatoria.", keywords: ["meglio", "ansia gestibile"] }
-          );
-        }, 2500);
-      } catch (error) {
-        console.error('Errore durante il salvataggio dell\'audio:', error);
-        setIsProcessing(false);
-      }
-    }
+    setRecording(false);
+    
+    // SIMULAZIONE PROCESSO AI
+    setTimeout(() => {
+      setIsProcessing(false);
+      onTranscriptFound(
+        "Oggi mi sento molto meglio, ho finito quasi tutti i compiti del lavoro. Un po' di ansia per domani, ma gestibile. (Testo generato da finto registratore)",
+        { summary: "Senso di realizzazione unito a lieve ansia anticipatoria.", keywords: ["meglio", "ansia gestibile"] }
+      );
+    }, 2500);
   }
 
   return (

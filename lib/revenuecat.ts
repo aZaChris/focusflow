@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
-import Purchases from 'react-native-purchases';
+// DISABILITATO TEMPORANEAMENTE PER EXPO GO
+// import Purchases from 'react-native-purchases';
 
 /**
  * Gestione degli acquisti in-app tramite RevenueCat.
@@ -20,6 +21,7 @@ const APIKeys = {
  */
 export const initRevenueCat = async () => {
   try {
+    /* DISABILITATO PER EXPO GO
     if (Platform.OS === 'ios' && APIKeys.apple) {
       await Purchases.configure({ apiKey: APIKeys.apple });
       console.log("RevenueCat: Configurato con successo per iOS");
@@ -29,6 +31,8 @@ export const initRevenueCat = async () => {
     } else {
       console.warn("RevenueCat: Chiavi API mancanti o piattaforma non supportata.");
     }
+    */
+    console.log("RevenueCat: [MOCK EXPO GO] Inizializzazione fittizia.");
   } catch (error) {
     console.error("RevenueCat: Errore durante l'inizializzazione", error);
   }
@@ -40,9 +44,13 @@ export const initRevenueCat = async () => {
  */
 export const checkProStatus = async (): Promise<boolean> => {
   try {
+    /* DISABILITATO PER EXPO GO
     const customerInfo = await Purchases.getCustomerInfo();
     // Verifichiamo se l'entitlement 'pro' è presente tra quelli attivi
     return typeof customerInfo.entitlements.active['pro'] !== "undefined";
+    */
+    console.log("RevenueCat: [MOCK EXPO GO] Richiesta status pro (Ritorno False).");
+    return false;
   } catch (e) {
     console.warn("RevenueCat: Errore durante il controllo dello stato Pro", e);
     return false;
