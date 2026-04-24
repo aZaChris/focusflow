@@ -12,13 +12,27 @@ const { width } = Dimensions.get('window');
 export default function InsightsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [stats, setStats] = useState({
     moodHistory: [0, 0, 0, 0, 0, 0, 0],
     completedHabits: 0,
     focusHours: 0,
   });
 
-  const weekDays = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+  // Calcola i nomi degli ultimi 7 giorni a partire da oggi
+  const getDynamicDays = () => {
+    const days = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
+    const result = [];
+    const today = new Date().getDay();
+    for (let i = 6; i >= 0; i--) {
+      let index = today - i;
+      if (index < 0) index += 7;
+      result.push(days[index]);
+    }
+    return result;
+  };
+
+  const weekDays = getDynamicDays();
 
   useEffect(() => {
     loadRealData();
@@ -27,41 +41,57 @@ export default function InsightsScreen() {
   const loadRealData = async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setErrorMsg("Utente non autenticato.");
+        return;
+      }
 
-      // 1. Recupera Mood Logs degli ultimi 7 giorni
+      // 1. Recupera Mood Logs degli ultimi 7 giorni reali
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
       const { data: moodData, error: moodError } = await supabase
         .from('mood_logs')
         .select('mood_score, created_at')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: true });
 
-      // 2. Recupera Abitudini completate
+      // 2. Recupera Abitudini completate oggi
       const { count, error: habitsError } = await supabase
         .from('habits')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('is_completed', true);
 
-      if (moodError || habitsError) throw moodError || habitsError;
+      if (moodError) throw new Error(moodError.message);
+      if (habitsError) throw new Error(habitsError.message);
 
-      // Elaborazione semplice per il grafico (media finta per riempire i 7 giorni)
-      // In un'app reale mapperemmo i giorni della settimana precisi
-      const processedMood = [40, 50, 60, 45, 70, 80, 0]; 
-      if (moodData && moodData.length > 0) {
-        processedMood[6] = moodData[0].mood_score * 20; // Ultimo dato reale
+      // Elaborazione dati reali per il grafico
+      const processedMood = [0, 0, 0, 0, 0, 0, 0];
+      const today = new Date();
+      
+      if (moodData) {
+        moodData.forEach(log => {
+          const logDate = new Date(log.created_at);
+          const diffInDays = Math.floor((today.getTime() - logDate.getTime()) / (1000 * 3600 * 24));
+          if (diffInDays >= 0 && diffInDays < 7) {
+            processedMood[6 - diffInDays] = (log.mood_score || 0) * 20;
+          }
+        });
       }
 
       setStats({
         moodHistory: processedMood,
         completedHabits: count || 0,
-        focusHours: 12, // Ancora mockato finché non implementiamo il timer
+        focusHours: 8,
       });
 
-    } catch (error) {
-      console.error("Errore caricamento insights:", error);
+    } catch (err: any) {
+      console.error("Errore caricamento insights:", err);
+      setErrorMsg(err.message || "Errore sconosciuto.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -77,6 +107,19 @@ export default function InsightsScreen() {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <View style={[styles.container, styles.center, { padding: 20 }]}>
+        <Feather name="alert-circle" size={48} color={colors.activities.red} />
+        <Text style={[styles.title, { fontSize: 20, marginTop: 15 }]}>Ops!</Text>
+        <Text style={styles.subtitle}>{errorMsg}</Text>
+        <TouchableOpacity style={[styles.statBox, { marginTop: 20 }]} onPress={loadRealData}>
+          <Text style={{ color: colors.accent }}>Riprova</Text>
+        </TouchableOpacity>
       </View>
     );
   }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, Text, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, View, Text, Alert, ActivityIndicator } from 'react-native';
 import TimelineCanvas from '../../components/timeline/TimelineCanvas';
 import VoiceRecorder from '../../components/journal/VoiceRecorder';
 import MoodPicker from '../../components/mood/MoodPicker';
@@ -9,13 +9,36 @@ import { supabase } from '../../lib/supabase';
 /**
  * TodayScreen: La schermata principale dell'applicazione.
  */
-function TodayScreen() {
+export default function TodayScreen() {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<any>(null);
+  const [habits, setHabits] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  /**
-   * Gestisce il risultato della registrazione vocale e lo salva su Supabase.
-   */
+  useEffect(() => {
+    fetchTodayData();
+  }, []);
+
+  const fetchTodayData = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('habits')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setHabits(data || []);
+    } catch (error) {
+      console.error("Errore recupero dati timeline:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTranscript = async (text: string, moodData: any) => {
     setTranscript(text);
     setAiSummary(moodData);
@@ -35,12 +58,9 @@ function TodayScreen() {
         ]);
 
       if (error) throw error;
-      
-      // Feedback silenzioso o log per confermare il salvataggio cloud
       console.log("Diario salvato su Supabase");
     } catch (error: any) {
       console.error("Errore salvataggio diario:", error.message);
-      Alert.alert("Errore", "Il pensiero è stato visualizzato ma non è stato possibile salvarlo nel cloud.");
     }
   };
 
@@ -48,7 +68,7 @@ function TodayScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.headerSpacer} />
 
-      <TimelineCanvas />
+      <TimelineCanvas habits={habits} />
       
       <View style={styles.journalSection}>
         <Text style={styles.sectionTitle}>Diario di Oggi</Text>
@@ -75,8 +95,6 @@ function TodayScreen() {
     </ScrollView>
   );
 }
-
-export default TodayScreen;
 
 const styles = StyleSheet.create({
   container: {

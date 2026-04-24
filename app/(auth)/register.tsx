@@ -10,8 +10,19 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   async function signUp() {
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail || !password) {
+      Alert.alert('Attenzione', 'Inserisci sia email che password.');
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ 
+      email: cleanEmail, 
+      password 
+    });
+
     if (error) {
       Alert.alert('Errore', error.message);
     } else {

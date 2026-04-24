@@ -17,13 +17,18 @@ export default function LoginScreen() {
    * Esegue il tentativo di accesso con email e password.
    */
   async function signIn() {
-    if (!email || !password) {
+    const cleanEmail = email.trim();
+    
+    if (!cleanEmail || !password) {
       Alert.alert('Attenzione', 'Inserisci sia email che password.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: cleanEmail, 
+      password 
+    });
     
     if (error) {
       Alert.alert('Errore di Accesso', error.message);

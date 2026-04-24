@@ -10,16 +10,12 @@ const TIMELINE_HEIGHT = 160;
  * TimelineCanvas: Una visualizzazione interattiva del tempo.
  * Versione ottimizzata per Expo Go (senza Skia) ma con design premium.
  */
-export default function TimelineCanvas() {
-  const scrollViewRef = useRef<ScrollView>(null);
+interface TimelineProps {
+  habits?: any[];
+}
 
-  // Mock delle attività della giornata
-  const activities = [
-    { start: 9, duration: 1.5, title: 'Deep Work', color: colors.activities.purple },
-    { start: 12.5, duration: 1, title: 'Pranzo', color: colors.activities.amber },
-    { start: 14.5, duration: 2, title: 'Meeting', color: colors.activities.blue },
-    { start: 18, duration: 1, title: 'Gym', color: colors.activities.teal },
-  ];
+export default function TimelineCanvas({ habits = [] }: TimelineProps) {
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Calcola la posizione del tempo corrente
   const now = new Date();
@@ -34,12 +30,12 @@ export default function TimelineCanvas() {
         animated: true,
       });
     }, 500);
-  }, []);
+  }, [currentTimePosition]);
 
   return (
     <View style={styles.outerContainer}>
       <View style={styles.headerRow}>
-        <Text style={styles.dayText}>Oggi</Text>
+        <Text style={styles.dayText}>Timeline di Oggi</Text>
         <View style={styles.nowBadge}>
           <Text style={styles.nowBadgeText}>LIVE</Text>
         </View>
@@ -60,23 +56,30 @@ export default function TimelineCanvas() {
           </View>
         ))}
 
-        {/* Blocchi Attività */}
-        {activities.map((act, index) => (
-          <View 
-            key={index} 
-            style={[
-              styles.activityBlock, 
-              { 
-                left: act.start * HOUR_WIDTH, 
-                width: act.duration * HOUR_WIDTH - 4,
-                backgroundColor: act.color + '44',
-                borderColor: act.color,
-              }
-            ]}
-          >
-            <Text style={[styles.activityTitle, { color: act.color }]}>{act.title}</Text>
-          </View>
-        ))}
+        {/* Abitudini Reali */}
+        {habits.map((habit, index) => {
+          const habitDate = new Date(habit.created_at);
+          const habitHour = habitDate.getHours() + habitDate.getMinutes() / 60;
+          
+          return (
+            <View 
+              key={habit.id || index} 
+              style={[
+                styles.activityBlock, 
+                { 
+                  left: habitHour * HOUR_WIDTH, 
+                  width: 120, // Larghezza fissa per le abitudini
+                  backgroundColor: habit.is_completed ? colors.activities.teal + '33' : colors.surface2,
+                  borderColor: habit.is_completed ? colors.activities.teal : colors.border,
+                }
+              ]}
+            >
+              <Text style={[styles.activityTitle, { color: habit.is_completed ? colors.activities.teal : colors.text }]}>
+                {habit.icon || '✨'} {habit.title}
+              </Text>
+            </View>
+          );
+        })}
 
         {/* Indicatore Tempo Reale */}
         <View style={[styles.currentTimeLine, { left: currentTimePosition }]}>

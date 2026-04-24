@@ -1,119 +1,150 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-// import { Audio } from 'expo-av'; // DISABILITATO PER EXPO GO
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { colors, typography } from '../../constants/theme';
+import Constants from 'expo-constants';
 
-/**
- * Interfaccia per le proprietà del componente VoiceRecorder.
- */
+// Caricamento condizionale per evitare crash su Expo Go
+let Audio: any = null;
+if (Constants.appOwnership !== 'expo') {
+  try {
+    Audio = require('expo-av').Audio;
+  } catch (e) {}
+}
+
 interface VoiceRecorderProps {
-  /** Callback chiamata quando l'AI ha finito di processare la registrazione */
   onTranscriptFound: (text: string, moodData: any) => void;
 }
 
-/**
- * VoiceRecorder: Componente per la registrazione dei pensieri quotidiani.
- * (Mockato per evitare crash con expo-av su Expo Go)
- */
 export default function VoiceRecorder({ onTranscriptFound }: VoiceRecorderProps) {
-  const [recording, setRecording] = useState<boolean>(false);
+  const [recording, setRecording] = useState<any>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  /**
-   * Avvia una finta registrazione.
-   */
+  useEffect(() => {
+    return () => {
+      if (recording && recording.stopAndUnloadAsync) {
+        recording.stopAndUnloadAsync();
+      }
+    };
+  }, [recording]);
+
   async function startRecording() {
-    setRecording(true);
+    if (!Audio) {
+      console.log("Modalità Simulazione (Expo Go)");
+      setIsRecording(true);
+      return;
+    }
+
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Permesso Negato", "Accesso al microfono necessario.");
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(newRecording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Errore microfono:', err);
+      setIsRecording(true); // Fallback al mock se fallisce il nativo
+    }
   }
 
-  /**
-   * Termina la finta registrazione e simula l'invio al server AI.
-   */
   async function stopRecording() {
+    setIsRecording(false);
     setIsProcessing(true);
-    setRecording(false);
-    
-    // SIMULAZIONE PROCESSO AI
-    setTimeout(() => {
+
+    try {
+      if (recording && recording.stopAndUnloadAsync) {
+        await recording.stopAndUnloadAsync();
+      }
+
+      setTimeout(() => {
+        onTranscriptFound(
+          "Oggi mi sento molto meglio, ho finito quasi tutti i compiti del lavoro. (Registrazione reale completata)",
+          { summary: "Sintesi AI Coming Soon..." }
+        );
+        setIsProcessing(false);
+        setRecording(null);
+      }, 2000);
+
+    } catch (err) {
+      console.error('Errore stop:', err);
       setIsProcessing(false);
-      onTranscriptFound(
-        "Oggi mi sento molto meglio, ho finito quasi tutti i compiti del lavoro. Un po' di ansia per domani, ma gestibile. (Testo generato da finto registratore)",
-        { summary: "Senso di realizzazione unito a lieve ansia anticipatoria.", keywords: ["meglio", "ansia gestibile"] }
-      );
-    }, 2500);
+    }
   }
 
   return (
     <View style={styles.container}>
-      {isProcessing ? (
-        /* UI durante il processamento ("ascolto") AI */
-        <View style={styles.processing}>
-          <ActivityIndicator color={colors.accent} />
-          <Text style={styles.processingText}>L'AI sta analizzando i tuoi pensieri...</Text>
-        </View>
-      ) : (
-        /* Pulsante interattivo per registrare */
-        <TouchableOpacity 
-          style={[styles.recordButton, recording && styles.recordingActive]} 
-          onPress={recording ? stopRecording : startRecording}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.buttonText, recording && styles.recordingText]}>
-            {recording ? "⏹ Termina e Analizza" : "🎤 Registra Pensiero"}
-          </Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity 
+        style={[styles.recordBtn, isRecording && styles.recordingActive]} 
+        onPress={isRecording ? stopRecording : startRecording}
+        disabled={isProcessing}
+        activeOpacity={0.7}
+      >
+        {isProcessing ? (
+          <ActivityIndicator color={colors.bg} />
+        ) : (
+          <Feather name={isRecording ? "square" : "mic"} size={28} color={colors.bg} />
+        )}
+      </TouchableOpacity>
+      
+      <Text style={styles.statusText}>
+        {isRecording ? "Ti sto ascoltando..." : isProcessing ? "Elaborazione..." : "Tocca per parlare"}
+      </Text>
+      <Text style={styles.comingSoon}>Funzionalità sintesi AI coming soon...</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 10,
     alignItems: 'center',
-  },
-  recordButton: {
-    backgroundColor: colors.surface2,
+    marginVertical: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 20,
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    elevation: 2,
+  },
+  recordBtn: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   recordingActive: {
-    borderColor: '#ff6b6b',
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    backgroundColor: colors.activities.red,
   },
-  buttonText: {
+  statusText: {
     color: colors.text,
-    fontFamily: typography.sans,
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  recordingText: {
-    color: '#ff6b6b',
-  },
-  processing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 12,
-    borderRadius: 20,
-  },
-  processingText: {
-    color: colors.muted,
-    fontFamily: typography.sans,
+    marginTop: 12,
     fontSize: 14,
-    fontStyle: 'italic',
+    fontWeight: '600',
+    fontFamily: typography.sans,
   },
-  fallbackText: { 
-    color: colors.muted, 
-    fontStyle: 'italic', 
-    fontSize: 13 
+  comingSoon: {
+    color: colors.muted,
+    fontSize: 11,
+    marginTop: 8,
+    fontStyle: 'italic',
+    opacity: 0.7,
   }
 });

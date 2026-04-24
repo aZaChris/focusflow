@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { colors, typography } from '../../constants/theme';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  TextInput, 
+  ActivityIndicator, 
+  Alert,
+  Platform,
+  KeyboardAvoidingView
+} from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { colors, typography } from '../../constants/theme';
+import { Feather } from '@expo/vector-icons';
 
 interface Habit {
   id: string;
@@ -10,13 +21,14 @@ interface Habit {
   icon: string;
   streak: number;
   is_completed: boolean;
+  created_at: string;
 }
 
 export default function HabitsScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newHabitTitle, setNewHabitTitle] = useState('');
   const [loading, setLoading] = useState(true);
+  const [newHabit, setNewHabit] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     fetchHabits();
@@ -26,79 +38,67 @@ export default function HabitsScreen() {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) return;
 
       const { data, error } = await supabase
         .from('habits')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setHabits(data || []);
     } catch (error: any) {
-      Alert.alert('Errore', 'Impossibile caricare le abitudini: ' + error.message);
+      Alert.alert('Errore', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleHabit = async (habit: Habit) => {
-    const newStatus = !habit.is_completed;
-    const newStreak = newStatus ? habit.streak + 1 : Math.max(0, habit.streak - 1);
+  const addHabit = async () => {
+    if (!newHabit.trim()) return;
 
-    // Update locale per reattività immediata
-    setHabits(current => 
-      current.map(h => h.id === habit.id ? { ...h, is_completed: newStatus, streak: newStreak } : h)
-    );
-
-    try {
-      const { error } = await supabase
-        .from('habits')
-        .update({ is_completed: newStatus, streak: newStreak })
-        .eq('id', habit.id);
-
-      if (error) throw error;
-    } catch (error: any) {
-      // Rollback in caso di errore
-      fetchHabits();
-      Alert.alert('Errore', 'Impossibile aggiornare l\'abitudine');
-    }
-  };
-
-  const addNewHabit = async () => {
-    if (newHabitTitle.trim() === '') {
-      setIsAdding(false);
-      return;
-    }
-    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Utente non autenticato');
-
-      const newHabit = {
-        user_id: user.id,
-        title: newHabitTitle.trim(),
-        icon: '✨',
-        streak: 0,
-        is_completed: false
-      };
+      if (!user) return;
 
       const { data, error } = await supabase
         .from('habits')
-        .insert([newHabit])
+        .insert([
+          { 
+            title: newHabit, 
+            user_id: user.id,
+            icon: '✨',
+            streak: 0,
+            is_completed: false
+          }
+        ])
         .select();
 
       if (error) throw error;
-
-      if (data) {
-        setHabits([...habits, data[0]]);
-        setNewHabitTitle('');
-        setIsAdding(false);
-      }
+      
+      setHabits([data[0], ...habits]);
+      setNewHabit('');
+      setIsAdding(false);
     } catch (error: any) {
-      Alert.alert('Errore', 'Impossibile creare l\'abitudine: ' + error.message);
+      Alert.alert('Errore', error.message);
+    }
+  };
+
+  const toggleHabit = async (habit: Habit) => {
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .update({ is_completed: !habit.is_completed })
+        .eq('id', habit.id);
+
+      if (error) throw error;
+      
+      setHabits(habits.map(h => 
+        h.id === habit.id ? { ...h, is_completed: !h.is_completed } : h
+      ));
+    } catch (error: any) {
+      Alert.alert('Errore', error.message);
     }
   };
 
@@ -129,14 +129,39 @@ export default function HabitsScreen() {
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Le tue Abitudini</Text>
-        <Text style={styles.headerSubtitle}>Costruisci la tua routine ideale giorno per giorno.</Text>
+        <Text style={styles.headerTitle}>Abitudini</Text>
+        <Text style={styles.headerSubtitle}>Costruisci la tua routine</Text>
+      </View>
+
+      <View style={styles.topInputContainer}>
+        {isAdding ? (
+          <View style={styles.addSection}>
+            <TextInput
+              style={styles.input}
+              placeholder="Esempio: Meditazione"
+              placeholderTextColor={colors.muted}
+              value={newHabit}
+              onChangeText={setNewHabit}
+              autoFocus
+            />
+            <TouchableOpacity style={styles.saveBtn} onPress={addHabit}>
+              <Feather name="check" size={20} color={colors.bg} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsAdding(false)}>
+              <Feather name="x" size={20} color={colors.activities.red} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={styles.addPlaceholder} 
+            onPress={() => setIsAdding(true)}
+          >
+            <Feather name="plus" size={20} color={colors.accent} />
+            <Text style={styles.addPlaceholderText}>Aggiungi una nuova abitudine</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {loading ? (
@@ -146,38 +171,15 @@ export default function HabitsScreen() {
       ) : (
         <FlatList
           data={habits}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={renderHabit}
           contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <Text style={styles.emptyText}>Ancora nessuna abitudine. Inizia ora!</Text>
           }
         />
       )}
-
-      {isAdding ? (
-        <View style={styles.addSection}>
-          <TextInput
-            style={styles.input}
-            placeholder="Es. Fare stretching, Meditare..."
-            placeholderTextColor={colors.muted}
-            value={newHabitTitle}
-            onChangeText={setNewHabitTitle}
-            autoFocus
-            onSubmitEditing={addNewHabit}
-          />
-          <TouchableOpacity style={styles.saveBtn} onPress={addNewHabit}>
-            <Feather name="check" size={24} color={colors.bg} />
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity style={styles.fab} onPress={() => setIsAdding(true)}>
-          <Feather name="plus" size={24} color={colors.bg} />
-          <Text style={styles.fabText}>Nuova Abitudine</Text>
-        </TouchableOpacity>
-      )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -207,10 +209,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
   },
   emptyText: {
     color: colors.muted,
@@ -283,60 +281,58 @@ const styles = StyleSheet.create({
     backgroundColor: colors.activities.teal,
     borderColor: colors.activities.teal,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 25,
-    right: 25,
+  topInputContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  addPlaceholder: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accent,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    backgroundColor: colors.surface,
+    padding: 15,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
   },
-  fabText: {
-    color: colors.bg,
-    fontFamily: typography.sans,
-    fontWeight: 'bold',
-    fontSize: 16,
+  addPlaceholderText: {
+    color: colors.muted,
     marginLeft: 10,
+    fontSize: 15,
+    fontWeight: '500',
   },
   addSection: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.surface,
-    padding: 20,
-    paddingBottom: 40,
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.accent,
   },
   input: {
     flex: 1,
-    height: 50,
-    backgroundColor: colors.surface2,
-    borderRadius: 15,
-    paddingHorizontal: 20,
+    height: 45,
+    paddingHorizontal: 15,
     color: colors.text,
     fontFamily: typography.sans,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    fontSize: 15,
   },
   saveBtn: {
-    width: 50,
-    height: 50,
-    backgroundColor: colors.activities.teal,
-    borderRadius: 15,
+    width: 40,
+    height: 40,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 10,
+    marginLeft: 8,
+  },
+  cancelBtn: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Più spazio per la floating nav bar
   }
 });
