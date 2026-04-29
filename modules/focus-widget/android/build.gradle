@@ -1,0 +1,17 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+  compileSdkVersion 34
+  namespace "com.azachris.focusflow"
+  defaultConfig {
+    minSdkVersion 23
+    targetSdkVersion 34
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+  implementation "androidx.work:work-runtime-ktx:2.9.0"
+}

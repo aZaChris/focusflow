@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, Text, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, ScrollView, View, Text, Alert, ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
 import TimelineCanvas from '../../components/timeline/TimelineCanvas';
 import VoiceRecorder from '../../components/journal/VoiceRecorder';
 import MoodPicker from '../../components/mood/MoodPicker';
 import { colors, typography } from '../../constants/theme';
 import { supabase } from '../../lib/supabase';
+import { useFocusEffect } from 'expo-router';
+
+import { syncWidget } from '../../lib/widgetSync';
 
 /**
  * TodayScreen: La schermata principale dell'applicazione.
  */
 export default function TodayScreen() {
-  const [transcript, setTranscript] = useState<string | null>(null);
-  const [aiSummary, setAiSummary] = useState<any>(null);
   const [habits, setHabits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<any>(null);
 
-  useEffect(() => {
-    fetchTodayData();
-  }, []);
+  // Ricarica i dati ogni volta che la Tab viene visualizzata
+  useFocusEffect(
+    useCallback(() => {
+      fetchTodayData();
+    }, [])
+  );
 
   const fetchTodayData = async () => {
     try {
@@ -31,7 +37,15 @@ export default function TodayScreen() {
         .eq('user_id', user.id);
 
       if (error) throw error;
+      console.log("Dati ricevuti da Supabase (Today):", data);
       setHabits(data || []);
+      
+      // Sincronizziamo il widget nativo in modo asincrono rispetto al render
+      if (data) {
+        setTimeout(() => {
+          syncWidget(data);
+        }, 0);
+      }
     } catch (error) {
       console.error("Errore recupero dati timeline:", error);
     } finally {
@@ -66,17 +80,32 @@ export default function TodayScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerSpacer} />
-
+      <View style={{ height: 40 }} />
       <TimelineCanvas habits={habits} />
       
-      <View style={styles.journalSection}>
+      <View style={[styles.journalSection, { marginTop: 40 }]}>
         <Text style={styles.sectionTitle}>Diario di Oggi</Text>
         <VoiceRecorder onTranscriptFound={handleTranscript} />
 
-        {transcript && (
+        {transcript !== null && (
           <View style={styles.transcriptBox}>
-            <Text style={styles.transcriptText}>"{transcript}"</Text>
+            <Text style={styles.boxLabel}>Trascrizione (Editabile):</Text>
+            <TextInput
+              style={styles.editableInput}
+              multiline
+              value={transcript}
+              onChangeText={setTranscript}
+              placeholder="Cosa hai in mente?"
+              placeholderTextColor={colors.muted}
+            />
+            
+            <TouchableOpacity 
+              style={styles.saveBtn}
+              onPress={() => handleTranscript(transcript, aiSummary)}
+            >
+              <Text style={styles.saveBtnText}>Aggiorna Diario</Text>
+            </TouchableOpacity>
+
             {aiSummary && (
               <View style={styles.aiPill}>
                 <Text style={styles.aiPillText}>✨ Feedback AI: {aiSummary.summary}</Text>
@@ -84,11 +113,6 @@ export default function TodayScreen() {
             )}
           </View>
         )}
-      </View>
-
-      <View style={styles.moodSection}>
-        <Text style={styles.sectionTitle}>Come ti senti?</Text>
-        <MoodPicker />
       </View>
 
       <View style={{ height: 100 }} />
@@ -132,15 +156,38 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 15,
     backgroundColor: colors.surface2,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accent,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  transcriptText: {
+  boxLabel: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  editableInput: {
     color: colors.text,
-    fontStyle: 'italic',
+    fontSize: 16,
+    lineHeight: 24,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+  },
+  saveBtn: {
+    backgroundColor: colors.accent,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  saveBtnText: {
+    color: colors.bg,
+    fontWeight: 'bold',
     fontSize: 14,
-    lineHeight: 22,
   },
   aiPill: {
     marginTop: 10,

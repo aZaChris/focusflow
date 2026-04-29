@@ -27,8 +27,6 @@ export async function requestNotificationPermissions() {
  * Aggiorna la notifica permanente nel blocco schermo.
  */
 export async function updateLockScreenNotification(enabled: boolean) {
-  if (isExpoGoAndroid) return;
-
   try {
     const Notifications = require('expo-notifications');
     if (!enabled) {

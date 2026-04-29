@@ -47,7 +47,9 @@
             "kotlinVersion": "1.9.25"
           }
         }
-      ]
+      ],
+      "./plugins/focus-widget.js",
+      "expo-font"
     ],
     "extra": {
       "router": {},

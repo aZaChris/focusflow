@@ -14,6 +14,9 @@ import {
 import { supabase } from '../../lib/supabase';
 import { colors, typography } from '../../constants/theme';
 import { Feather } from '@expo/vector-icons';
+import { syncWidget } from '../../lib/widgetSync';
+
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface Habit {
   id: string;
@@ -21,6 +24,8 @@ interface Habit {
   icon: string;
   streak: number;
   is_completed: boolean;
+  scheduled_time: string | null;
+  duration_minutes: number;
   created_at: string;
 }
 
@@ -29,6 +34,11 @@ export default function HabitsScreen() {
   const [loading, setLoading] = useState(true);
   const [newHabit, setNewHabit] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  
+  // Stati per il tempo
+  const [selectedTime, setSelectedTime] = useState<Date | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [duration, setDuration] = useState(30);
 
   useEffect(() => {
     fetchHabits();
@@ -44,7 +54,7 @@ export default function HabitsScreen() {
         .from('habits')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('scheduled_time', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
       setHabits(data || []);
@@ -62,6 +72,11 @@ export default function HabitsScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Formattiamo l'ora per Postgres (HH:MM:SS)
+      const timeStr = selectedTime 
+        ? `${selectedTime.getHours().toString().padStart(2, '0')}:${selectedTime.getMinutes().toString().padStart(2, '0')}:00`
+        : null;
+
       const { data, error } = await supabase
         .from('habits')
         .insert([
@@ -70,15 +85,20 @@ export default function HabitsScreen() {
             user_id: user.id,
             icon: '✨',
             streak: 0,
-            is_completed: false
+            is_completed: false,
+            scheduled_time: timeStr,
+            duration_minutes: duration
           }
         ])
         .select();
 
       if (error) throw error;
       
-      setHabits([data[0], ...habits]);
+      const updatedHabits = [data[0], ...habits];
+      setHabits(updatedHabits);
+      syncWidget(updatedHabits); // Sincronizza widget
       setNewHabit('');
+      setSelectedTime(null);
       setIsAdding(false);
     } catch (error: any) {
       Alert.alert('Errore', error.message);
@@ -94,9 +114,11 @@ export default function HabitsScreen() {
 
       if (error) throw error;
       
-      setHabits(habits.map(h => 
+      const updatedHabits = habits.map(h => 
         h.id === habit.id ? { ...h, is_completed: !h.is_completed } : h
-      ));
+      );
+      setHabits(updatedHabits);
+      syncWidget(updatedHabits); // Sincronizza widget
     } catch (error: any) {
       Alert.alert('Errore', error.message);
     }
@@ -116,9 +138,17 @@ export default function HabitsScreen() {
           <Text style={[styles.habitTitle, item.is_completed && styles.habitTitleCompleted]}>
             {item.title}
           </Text>
-          <Text style={styles.streakText}>
-            🔥 {item.streak} {item.streak === 1 ? 'giorno' : 'giorni'} di fila
-          </Text>
+          <View style={styles.habitMeta}>
+            {item.scheduled_time && (
+              <View style={styles.timeTag}>
+                <Feather name="clock" size={12} color={colors.accent} />
+                <Text style={styles.timeTagText}>{item.scheduled_time.substring(0, 5)}</Text>
+              </View>
+            )}
+            <Text style={styles.streakText}>
+              🔥 {item.streak}
+            </Text>
+          </View>
         </View>
       </View>
       
@@ -137,21 +167,60 @@ export default function HabitsScreen() {
 
       <View style={styles.topInputContainer}>
         {isAdding ? (
-          <View style={styles.addSection}>
-            <TextInput
-              style={styles.input}
-              placeholder="Esempio: Meditazione"
-              placeholderTextColor={colors.muted}
-              value={newHabit}
-              onChangeText={setNewHabit}
-              autoFocus
-            />
-            <TouchableOpacity style={styles.saveBtn} onPress={addHabit}>
-              <Feather name="check" size={20} color={colors.bg} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsAdding(false)}>
-              <Feather name="x" size={20} color={colors.activities.red} />
-            </TouchableOpacity>
+          <View style={styles.addExpanded}>
+            <View style={styles.addSection}>
+              <TextInput
+                style={styles.input}
+                placeholder="Nome abitudine..."
+                placeholderTextColor={colors.muted}
+                value={newHabit}
+                onChangeText={setNewHabit}
+                autoFocus
+              />
+              <TouchableOpacity style={styles.saveBtn} onPress={addHabit}>
+                <Feather name="check" size={20} color={colors.bg} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsAdding(false)}>
+                <Feather name="x" size={20} color={colors.activities.red} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.timeRow}>
+              <TouchableOpacity 
+                style={[styles.timePickerBtn, selectedTime && styles.timePickerBtnActive]}
+                onPress={() => setShowPicker(true)}
+              >
+                <Feather name="clock" size={18} color={selectedTime ? colors.bg : colors.accent} />
+                <Text style={[styles.timePickerText, selectedTime && styles.timePickerTextActive]}>
+                  {selectedTime ? `${selectedTime.getHours()}:${selectedTime.getMinutes().toString().padStart(2, '0')}` : "Imposta orario"}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.durationContainer}>
+                {[15, 30, 60].map((d) => (
+                  <TouchableOpacity 
+                    key={d}
+                    style={[styles.durationPill, duration === d && styles.durationPillActive]}
+                    onPress={() => setDuration(d)}
+                  >
+                    <Text style={[styles.durationPillText, duration === d && styles.durationPillTextActive]}>{d}m</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {showPicker && (
+              <DateTimePicker
+                value={selectedTime || new Date()}
+                mode="time"
+                is24Hour={true}
+                display="default"
+                onChange={(event, date) => {
+                  setShowPicker(false);
+                  if (date) setSelectedTime(date);
+                }}
+              />
+            )}
           </View>
         ) : (
           <TouchableOpacity 
@@ -267,6 +336,85 @@ const styles = StyleSheet.create({
     fontFamily: typography.sans,
     fontSize: 13,
     fontWeight: '500',
+  },
+  habitMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  timeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(200, 240, 74, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  timeTagText: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  addExpanded: {
+    backgroundColor: colors.surface,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  timePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  timePickerBtnActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  timePickerText: {
+    color: colors.muted,
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  timePickerTextActive: {
+    color: colors.bg,
+    fontWeight: 'bold',
+  },
+  durationContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  durationPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: colors.surface2,
+  },
+  durationPillActive: {
+    backgroundColor: colors.activities.teal,
+  },
+  durationPillText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  durationPillTextActive: {
+    color: colors.bg,
   },
   checkbox: {
     width: 28,

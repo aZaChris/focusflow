@@ -1,0 +1,9 @@
+{
+  "name": "focus-widget",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "expo": {
+    "name": "focus-widget",
+    "slug": "focus-widget"
+  }
+}
