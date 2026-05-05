@@ -1,29 +1,32 @@
 {
   "expo": {
-    "name": "focusflow",
+    "name": "FocusFlow",
     "slug": "focusflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0a0a12"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.azachris.focusflow",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#0a0a12",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.azachris.focusflow"
     },
@@ -35,9 +38,16 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#c8f04a"
+        }
+      ],
+      [
         "expo-av",
         {
-          "microphonePermission": "Consenti a FocusFlow di registrare l'audio del tuo diario."
+          "microphonePermission": "Consenti a FocusFlow di registrare l'audio del tuo diario vocale."
         }
       ],
       [
@@ -52,7 +62,9 @@
       "expo-font"
     ],
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
         "projectId": "5cd03c3b-62cf-48cc-a5f9-40e0ad76522a"
       }
