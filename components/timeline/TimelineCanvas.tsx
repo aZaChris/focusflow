@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Dimensions } from 'react-native';
 import { Canvas, Rect, Group, Line, vec, Skia } from '@shopify/react-native-skia';
 import PixelCharacter from './PixelCharacter';
 import ActivityBlock from './ActivityBlock';
-import { colors } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import Animated, { useSharedValue, useDerivedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -29,6 +29,8 @@ interface TimelineProps {
  * La timeline scorre in tempo reale sotto i piedi del personaggio.
  */
 export default function TimelineCanvas({ habits = [] }: TimelineProps) {
+  const { theme } = useTheme();
+  
   // Valore condiviso che rappresenta l'ora decimale corrente (es. 14.5 = 14:30)
   const currentTime = useSharedValue(new Date().getHours() + (new Date().getMinutes() / 60) + (new Date().getSeconds() / 3600));
 
@@ -53,7 +55,7 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
       */}
       <Canvas style={styles.canvas}>
         {/* Sfondo Notturno/Spazio */}
-        <Rect x={0} y={0} width={width} height={CANVAS_HEIGHT} color={colors.bg} />
+        <Rect x={0} y={0} width={width} height={CANVAS_HEIGHT} color={theme.colors.background} />
         
         {/* Stelle Parallasse (Elementi decorativi) */}
         <Rect x={width * 0.1} y={30} width={4} height={4} color="#ffffff55" />
@@ -64,10 +66,10 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
         <Line 
           p1={vec(0, GROUND_Y)} 
           p2={vec(width, GROUND_Y)} 
-          color={colors.border} 
+          color={theme.colors.border} 
           strokeWidth={4} 
         />
-        <Rect x={0} y={GROUND_Y + 1} width={width} height={CANVAS_HEIGHT - GROUND_Y} color={colors.surface2} />
+        <Rect x={0} y={GROUND_Y + 1} width={width} height={CANVAS_HEIGHT - GROUND_Y} color={theme.colors.surface2} />
 
         {/* Gruppo Blocchi Attività: Ogni blocco si muove in base al tempo corrente */}
         <Group matrix={matrix}>
@@ -85,7 +87,7 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
                   PRESENT_X={PRESENT_X}
                   GROUND_Y={GROUND_Y}
                   duration={habit.duration_minutes}
-                  color={habit.is_completed ? colors.activities.teal : colors.activities.purple} 
+                  color={habit.is_completed ? theme.colors.activities.teal : theme.colors.activities.purple} 
                   completed={habit.is_completed} 
                 />
               );

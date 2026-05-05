@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Group, Rect } from '@shopify/react-native-skia';
-import { colors } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * DEFINIZIONE DEI FRAME DI ANIMAZIONE (8x8 Pixel Grid)
- * 1: Rappresenta un pixel colorato (accento)
+ * 1: Rappresenta un pixel colorato (colore primario del tema)
  * 0: Rappresenta uno spazio vuoto (trasparente)
  */
 
-// Frame 1: Posizione neutra / inizio passo
 const frame1 = [
   "00111100",
   "01111110",
@@ -20,7 +19,6 @@ const frame1 = [
   "01100110",
 ];
 
-// Frame 2: Gambe in movimento (camminata)
 const frame2 = [
   "00111100",
   "01111110",
@@ -38,6 +36,7 @@ const frame2 = [
  * L'animazione è gestita tramite un timer React che alterna i frame.
  */
 export default function PixelCharacter({ x, y }: { x: number; y: number }) {
+  const { theme } = useTheme();
   const [frame, setFrame] = useState(0);
   const frames = [frame1, frame2];
   
@@ -77,7 +76,7 @@ export default function PixelCharacter({ x, y }: { x: number; y: number }) {
                 y={y - charHeight + rowIdx * PIXEL_SIZE} 
                 width={PIXEL_SIZE} 
                 height={PIXEL_SIZE} 
-                color={colors.primary} 
+                color={theme.colors.primary} 
               />
             );
           }
