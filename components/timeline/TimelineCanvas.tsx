@@ -1,24 +1,38 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Dimensions, Platform } from 'react-native';
-import { Canvas, Rect, Group, Line, vec, Skia, useFont, Text as SkiaText } from '@shopify/react-native-skia';
+import { StyleSheet, View, Text, Dimensions } from 'react-native';
+import { Canvas, Rect, Group, Line, vec, Skia } from '@shopify/react-native-skia';
 import PixelCharacter from './PixelCharacter';
 import ActivityBlock from './ActivityBlock';
 import { colors } from '../../constants/theme';
-import Animated, { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useSharedValue, useDerivedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
+
+/**
+ * COSTANTI DI LAYOUT DELLA TIMELINE
+ * GROUND_Y: L'altezza del terreno su cui cammina il personaggio.
+ * PRESENT_X: La posizione orizzontale fissa del personaggio (il "Presente").
+ * TICK_SPACING: Quanti pixel corrispondono a un'ora di tempo (600px/h).
+ */
 const CANVAS_HEIGHT = 350;
 const GROUND_Y = 270;
 const PRESENT_X = width * 0.38; 
-const TICK_SPACING = 600; // Pixel per ora (deve corrispondere a quello dei blocchi)
+const TICK_SPACING = 600; 
 
 interface TimelineProps {
   habits?: any[];
 }
 
+/**
+ * TimelineCanvas: Il cuore grafico di FocusFlow.
+ * Utilizza Shopify Skia per il rendering ad alte prestazioni e Reanimated per le animazioni fluide.
+ * La timeline scorre in tempo reale sotto i piedi del personaggio.
+ */
 export default function TimelineCanvas({ habits = [] }: TimelineProps) {
+  // Valore condiviso che rappresenta l'ora decimale corrente (es. 14.5 = 14:30)
   const currentTime = useSharedValue(new Date().getHours() + (new Date().getMinutes() / 60) + (new Date().getSeconds() / 3600));
 
+  // Loop di aggiornamento: mantiene il tempo sincronizzato ogni secondo
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
@@ -27,27 +41,26 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const matrix = useDerivedValue(() => {
-    const m = Skia.Matrix();
-    return m;
-  });
-
-  if (!Canvas) return null;
+  const matrix = useDerivedValue(() => Skia.Matrix());
 
   const hoursArray = Array.from({ length: 24 }, (_, i) => i);
 
-  console.log("TimelineCanvas render - Habits count:", habits.length);
-
   return (
     <View style={styles.container}>
+      {/* 
+          STRATO SKIA (GPU):
+          Gestisce lo sfondo, il terreno, i blocchi attività e il personaggio animato.
+      */}
       <Canvas style={styles.canvas}>
+        {/* Sfondo Notturno/Spazio */}
         <Rect x={0} y={0} width={width} height={CANVAS_HEIGHT} color={colors.bg} />
         
-        {/* Stelle parallasse statiche */}
+        {/* Stelle Parallasse (Elementi decorativi) */}
         <Rect x={width * 0.1} y={30} width={4} height={4} color="#ffffff55" />
         <Rect x={width * 0.4} y={80} width={6} height={6} color="#ffffff88" />
         <Rect x={width * 0.7} y={40} width={4} height={4} color="#ffffff44" />
         
+        {/* Linea del terreno e riempimento inferiore */}
         <Line 
           p1={vec(0, GROUND_Y)} 
           p2={vec(width, GROUND_Y)} 
@@ -56,7 +69,7 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
         />
         <Rect x={0} y={GROUND_Y + 1} width={width} height={CANVAS_HEIGHT - GROUND_Y} color={colors.surface2} />
 
-        {/* Griglia delle ore reale */}
+        {/* Gruppo Blocchi Attività: Ogni blocco si muove in base al tempo corrente */}
         <Group matrix={matrix}>
           {habits
             .filter(habit => habit.scheduled_time)
@@ -80,6 +93,7 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
           }
         </Group>
 
+        {/* Linea verticale indicatrice del "Adesso" */}
         <Line
           p1={vec(PRESENT_X, 0)}
           p2={vec(PRESENT_X, CANVAS_HEIGHT)}
@@ -87,10 +101,15 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
           strokeWidth={2}
         />
 
+        {/* Personaggio Pixel-Art animato */}
         <PixelCharacter x={PRESENT_X} y={GROUND_Y} />
       </Canvas>
 
-      {/* LIVELLO TESTO (REACT NATIVE) */}
+      {/* 
+          STRATO UI (REACT NATIVE):
+          Gestisce le etichette di testo (ore e titoli) che devono essere 
+          perfettamente leggibili e non renderizzate via GPU per massima nitidezza.
+      */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         {hoursArray.map((h) => (
           <AnimatedHourLabel 
@@ -123,6 +142,10 @@ export default function TimelineCanvas({ habits = [] }: TimelineProps) {
   );
 }
 
+/**
+ * AnimatedActivityBlock: Gestisce la posizione dinamica del blocco attività.
+ * Calcola l'offset X in base alla differenza tra l'ora del blocco e l'ora corrente.
+ */
 function AnimatedActivityBlock({ habitDecimalTime, currentTime, PRESENT_X, GROUND_Y, duration, color, completed }: any) {
   const matrix = useDerivedValue(() => {
     const timeDiff = habitDecimalTime - currentTime.value;
@@ -132,13 +155,13 @@ function AnimatedActivityBlock({ habitDecimalTime, currentTime, PRESENT_X, GROUN
     return m;
   });
 
-  const width = (duration / 60) * TICK_SPACING;
+  const blockWidth = (duration / 60) * TICK_SPACING;
 
   return (
     <Group matrix={matrix}>
       <ActivityBlock 
         y={GROUND_Y} 
-        width={width} 
+        width={blockWidth} 
         color={color} 
         completed={completed} 
       />
@@ -146,6 +169,9 @@ function AnimatedActivityBlock({ habitDecimalTime, currentTime, PRESENT_X, GROUN
   );
 }
 
+/**
+ * AnimatedHourLabel: Etichetta oraria che scorre in sincronia con la timeline.
+ */
 function AnimatedHourLabel({ hour, currentTime, PRESENT_X, GROUND_Y }: any) {
   const animatedStyle = useAnimatedStyle(() => {
     const timeDiff = hour - currentTime.value;
@@ -162,6 +188,9 @@ function AnimatedHourLabel({ hour, currentTime, PRESENT_X, GROUND_Y }: any) {
   );
 }
 
+/**
+ * AnimatedTitleLabel: Titolo dell'attività fluttuante sopra il blocco corrispondente.
+ */
 function AnimatedTitleLabel({ title, habitDecimalTime, currentTime, PRESENT_X, GROUND_Y }: any) {
   const animatedStyle = useAnimatedStyle(() => {
     const timeDiff = habitDecimalTime - currentTime.value;
@@ -201,14 +230,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     marginLeft: -18, 
-  },
-  fallback: {
-    height: CANVAS_HEIGHT,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  fallbackText: {
-    color: colors.muted
   }
 });
