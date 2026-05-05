@@ -1,155 +1,139 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
-import { colors, typography } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { registerForPushNotificationsAsync } from '../../lib/notifications';
 
 /**
- * LoginScreen: Schermata per l'accesso degli utenti esistenti.
- * Utilizza Supabase Auth per la gestione delle credenziali.
+ * LoginScreen: Schermata di accesso principale.
+ * Implementa il login con Supabase e la registrazione automatica delle notifiche push.
  */
 export default function LoginScreen() {
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   /**
-   * Esegue il tentativo di accesso con email e password.
+   * Gestisce il processo di sign-in.
    */
   async function signIn() {
     const cleanEmail = email.trim();
-    
     if (!cleanEmail || !password) {
       Alert.alert('Attenzione', 'Inserisci sia email che password.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ 
+    const { data, error } = await supabase.auth.signInWithPassword({ 
       email: cleanEmail, 
       password 
     });
     
     if (error) {
       Alert.alert('Errore di Accesso', error.message);
-    } else {
-      // Reindirizza alla schermata principale in caso di successo
+      setLoading(false);
+    } else if (data.user) {
+      // Registra le notifiche push per l'utente loggato
+      await registerForPushNotificationsAsync(data.user.id);
       router.replace('/(tabs)/today');
     }
-    setLoading(false);
   }
 
   return (
-    <View style={styles.container}>
-      {/* Titolo principale/Logo testuale */}
-      <Text style={styles.title}>FocusFlow</Text>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.colors.primary, fontFamily: theme.typography.sans }]}>
+            FocusFlow
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
+            Torna a gestire il tuo tempo in modo consapevole.
+          </Text>
+        </View>
 
-      {/* Campo Email */}
-      <TextInput
-        style={styles.input}
-        onChangeText={setEmail}
-        value={email}
-        placeholder="Email"
-        placeholderTextColor={colors.muted}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+        <View style={styles.form}>
+          <Input
+            label="Email"
+            placeholder="latua@email.com"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-      {/* Campo Password */}
-      <TextInput
-        style={styles.input}
-        onChangeText={setPassword}
-        value={password}
-        secureTextEntry
-        placeholder="Password"
-        placeholderTextColor={colors.muted}
-        autoCapitalize="none"
-      />
+          <Input
+            label="Password"
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
 
-      {/* Pulsante di Accesso */}
-      <TouchableOpacity 
-        style={[styles.button, loading && { opacity: 0.7 }]} 
-        disabled={loading} 
-        onPress={signIn}
-      >
-        <Text style={styles.buttonText}>{loading ? 'Accesso in corso...' : 'Log in'}</Text>
-      </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => router.push('/(auth)/forgot-password')}
+            style={styles.forgotBtn}
+          >
+            <Text style={[styles.forgotText, { color: theme.colors.primary }]}>
+              Password dimenticata?
+            </Text>
+          </TouchableOpacity>
 
-      {/* Pulsante ACCEDI COME OSPITE (Dev mode) */}
-      <TouchableOpacity 
-        style={styles.guestButton} 
-        onPress={() => router.replace('/(tabs)/today')}
-      >
-        <Text style={styles.guestButtonText}>Accedi come Ospite (Dev Mode)</Text>
-      </TouchableOpacity>
+          <Button 
+            title="Accedi" 
+            onPress={signIn} 
+            loading={loading}
+            style={styles.loginBtn}
+          />
 
-      {/* Link per passare alla registrazione */}
-      <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-        <Text style={styles.link}>Non hai un account? Registrati</Text>
-      </TouchableOpacity>
-    </View>
+          <View style={styles.divider}>
+            <View style={[styles.line, { backgroundColor: theme.colors.border }]} />
+            <Text style={[styles.dividerText, { color: theme.colors.textMuted }]}>oppure</Text>
+            <View style={[styles.line, { backgroundColor: theme.colors.border }]} />
+          </View>
+
+          <Button 
+            title="Accedi come Ospite (Dev Mode)" 
+            variant="outline"
+            onPress={() => router.replace('/(tabs)/today')}
+            style={styles.guestBtn}
+          />
+        </View>
+
+        <TouchableOpacity 
+          onPress={() => router.push('/(auth)/register')}
+          style={styles.footer}
+        >
+          <Text style={[styles.footerText, { color: theme.colors.text }]}>
+            Non hai un account? <Text style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Registrati</Text>
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.bg, 
-    padding: 20, 
-    justifyContent: 'center' 
-  },
-  title: { 
-    fontSize: 42, 
-    fontFamily: typography.sans, 
-    color: colors.accent, 
-    textAlign: 'center', 
-    marginBottom: 40, 
-    fontWeight: 'bold' 
-  },
-  input: { 
-    backgroundColor: colors.surface, 
-    color: colors.text, 
-    borderRadius: 12, 
-    padding: 18, 
-    marginBottom: 15, 
-    borderWidth: 1, 
-    borderColor: colors.border 
-  },
-  button: { 
-    backgroundColor: colors.accent, 
-    padding: 18, 
-    borderRadius: 15, 
-    alignItems: 'center', 
-    marginTop: 10,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4
-  },
-  buttonText: { 
-    color: colors.bg, 
-    fontFamily: typography.sans, 
-    fontWeight: 'bold', 
-    fontSize: 16 
-  },
-  guestButton: {
-    padding: 15,
-    marginTop: 15,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  guestButtonText: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  link: { 
-    color: colors.text, 
-    textAlign: 'center', 
-    marginTop: 25, 
-    textDecorationLine: 'underline' 
-  }
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, padding: 25, justifyContent: 'center' },
+  header: { marginBottom: 40, alignItems: 'center' },
+  title: { fontSize: 48, fontWeight: 'bold', marginBottom: 10 },
+  subtitle: { fontSize: 16, textAlign: 'center', lineHeight: 22 },
+  form: { width: '100%' },
+  forgotBtn: { alignSelf: 'flex-end', marginBottom: 20 },
+  forgotText: { fontSize: 14, fontWeight: '600' },
+  loginBtn: { marginBottom: 20 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  line: { flex: 1, height: 1 },
+  dividerText: { marginHorizontal: 15, fontSize: 14 },
+  guestBtn: { marginBottom: 30 },
+  footer: { marginTop: 20, alignItems: 'center' },
+  footerText: { fontSize: 15 }
 });
