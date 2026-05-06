@@ -30,13 +30,17 @@ export const palette = {
 export const darkTheme = {
   colors: {
     background: palette.bg,
+    bg: palette.bg, // Alias
     surface: palette.surface,
     surface2: palette.surface2,
     border: palette.border,
     primary: palette.accent,
+    accent: palette.accent, // Alias
     primaryDim: palette.accentDim,
+    accentDim: palette.accentDim, // Alias
     text: palette.text,
     textMuted: palette.muted,
+    muted: palette.muted, // Alias
     error: palette.activities.red,
     activities: palette.activities,
   },
@@ -49,13 +53,17 @@ export const darkTheme = {
 export const lightTheme = {
   colors: {
     background: palette.bgLight,
+    bg: palette.bgLight, // Alias
     surface: palette.surfaceLight,
     surface2: palette.surface2Light,
     border: palette.borderLight,
     primary: palette.accentLight,
+    accent: palette.accentLight, // Alias
     primaryDim: '#82c91e33',
+    accentDim: '#82c91e33', // Alias
     text: palette.textLight,
     textMuted: palette.mutedLight,
+    muted: palette.mutedLight, // Alias
     error: palette.activities.red,
     activities: palette.activities,
   },

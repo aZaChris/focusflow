@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 15,
     padding: 10,
-    backdropFilter: 'blur(10px)',
   },
   widgetLabel: {
     color: '#fff',
