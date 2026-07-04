@@ -38,6 +38,15 @@ Postgres function rather than stored, so there's nothing to backfill if the stre
 logic ever needs to change (see `specs/002-habit-mood-tracking/research.md` §1). See
 `specs/002-habit-mood-tracking/quickstart.md` for its scenario walkthroughs.
 
+`003-timeline-visualization` (today's schedule as a live timeline, with a real-time
+"now" marker and activity blocks) reuses the same project and adds only
+`supabase/migrations/0007_activities.sql` — again no new Edge Functions, no new
+environment variables. It deliberately does not use `@shopify/react-native-skia`
+(unlike `legacy-reference/`'s Timeline Canvas) — plain React Native views are enough
+for what this version's spec needs (see
+`specs/003-timeline-visualization/research.md` §1). See
+`specs/003-timeline-visualization/quickstart.md` for its scenario walkthroughs.
+
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 2. Log in and link this repo to your Supabase project (personal access token from
    https://supabase.com/dashboard/account/tokens if the browser login flow isn't
