@@ -1,194 +1,207 @@
-# Manual QA Checklist — pending device testing
+# Checklist QA manuale — test su device in sospeso
 
-Consolidates the manual QA left pending for `004-subscription-monetization`,
-`005-ai-voice-journal`, and `006-now-next-widget` (tracked as `⏸️` tasks in
-each feature's `tasks.md`). Nothing here can run under `npm test` — see each
-feature's `research.md` §4 for why. Check items off as you go; this file is
-disposable once everything is checked (or move failures into new tasks).
+Riunisce tutta la QA manuale rimasta in sospeso per `004-subscription-monetization`,
+`005-ai-voice-journal` e `006-now-next-widget` (tracciata come task `⏸️` nei
+rispettivi `tasks.md`). Niente di quanto segue può girare con `npm test` — vedi
+il `research.md` §4 di ogni feature per il perché. Spunta le voci man mano che
+proceedi; questo file è "usa e getta": una volta tutto verde (o spostato in
+nuove task) può essere cancellato.
 
 ---
 
-## Part A — One-time environment setup (Android Studio)
+## Parte A — Setup ambiente una tantum (Android Studio)
 
-Do this once; it unblocks all three features below.
+Da fare una volta sola; sblocca tutte e tre le feature qui sotto.
 
-- [ ] Install Android Studio, open it once so it finishes its own first-run SDK
-      component download (Android SDK Platform, Platform-Tools, an emulator
-      image if you'll use one).
-- [ ] Confirm `ANDROID_HOME`/`ANDROID_SDK_ROOT` is set and `adb` is on your
-      `PATH` (Android Studio's "SDK Manager" shows the SDK location; add
-      `<sdk>/platform-tools` and `<sdk>/emulator` to `PATH`).
-- [ ] Either: create an emulator (Android Studio → Device Manager → Create
-      Device), **or** connect a physical Android phone with USB debugging
-      enabled (Settings → About phone → tap "Build number" 7×, then Settings →
-      Developer options → USB debugging).
-- [ ] From `focusflow-rewrite/`, generate the native Android project:
+- [ ] Installa Android Studio, aprilo una volta e lascia che completi da solo
+      il download dei componenti SDK al primo avvio (Android SDK Platform,
+      Platform-Tools, un'immagine emulatore se vuoi usarne uno).
+- [ ] Verifica che `ANDROID_HOME`/`ANDROID_SDK_ROOT` sia impostata e che `adb`
+      sia nel tuo `PATH` (Android Studio → SDK Manager mostra il percorso
+      dell'SDK; aggiungi `<sdk>/platform-tools` e `<sdk>/emulator` al `PATH`).
+- [ ] In alternativa: crea un emulatore (Android Studio → Device Manager →
+      Create Device), **oppure** collega un telefono Android reale con il
+      debug USB attivo (Impostazioni → Info telefono → tocca 7 volte "Numero
+      build", poi Impostazioni → Opzioni sviluppatore → Debug USB).
+- [ ] Da `focusflow-rewrite/`, genera il progetto Android nativo:
       ```bash
       npx expo prebuild
       ```
-- [ ] Build and install a development build:
+- [ ] Compila e installa una development build:
       ```bash
       npx expo run:android
       ```
-      This compiles locally (no EAS cloud queue) and installs on whichever
-      device/emulator `adb devices` shows as connected.
-- [ ] Confirm the app launches, and you can sign in with a test account
-      (`001-user-auth`).
+      Compila in locale (nessuna coda cloud EAS) e installa su qualsiasi
+      device/emulatore risulti connesso da `adb devices`.
+- [ ] Verifica che l'app si avvii e che tu possa accedere con un account di
+      test (`001-user-auth`).
 
 ---
 
-## Part B — `004-subscription-monetization` (RevenueCat)
+## Parte B — `004-subscription-monetization` (RevenueCat)
 
-### One-time RevenueCat/store setup
+### Setup una tantum RevenueCat/store
 
-- [ ] RevenueCat project created, with the Android app added and its API key
-      copied.
-- [ ] Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `focusflow-rewrite/.env` to that
-      **public** key (never a secret key — Principle VII).
-- [ ] In RevenueCat: one entitlement (matching `ENTITLEMENT_ID = 'premium'` in
-      `src/features/subscription/hooks/useEntitlement.ts`) and one product,
-      exposed through a single offering marked "current."
-- [ ] In Google Play Console: a license-testing account added (Setup → License
-      testing), and the app uploaded to at least an internal testing track.
-- [ ] Rebuild after changing `.env`/`app.json` (`npx expo run:android` again).
+- [ ] Progetto RevenueCat creato, con l'app Android aggiunta e la sua API key
+      copiata.
+- [ ] Imposta `EXPO_PUBLIC_REVENUECAT_API_KEY` in `focusflow-rewrite/.env` con
+      quella chiave **pubblica** (mai una chiave segreta — Principio VII).
+- [ ] Su RevenueCat: un entitlement (deve corrispondere a
+      `ENTITLEMENT_ID = 'premium'` in
+      `src/features/subscription/hooks/useEntitlement.ts`) e un prodotto,
+      esposti tramite un'unica offering segnata come "current".
+- [ ] Su Google Play Console: un account di license-testing aggiunto (Setup →
+      License testing), e l'app caricata almeno su una track di internal
+      testing.
+- [ ] Ricompila dopo aver cambiato `.env`/`app.json` (di nuovo
+      `npx expo run:android`).
 
-### Scenario 1 — View plans and subscribe
+### Scenario 1 — Vedi i piani e abbonati
 
-- [ ] Sign in, open the subscription screen → plan and price are shown.
-- [ ] Purchase the plan using the license-testing account → native purchase UI
-      appears; on success, screen shows active entitlement automatically.
-- [ ] Start a purchase and cancel partway (or force airplane mode mid-flow) →
-      clear message shown, no crash/hang.
+- [ ] Accedi, apri la schermata abbonamento → piano e prezzo sono mostrati.
+- [ ] Acquista il piano con l'account di license-testing → appare la UI
+      nativa di acquisto; al successo, la schermata mostra l'entitlement
+      attivo automaticamente.
+- [ ] Avvia un acquisto e annullalo a metà (o forza la modalità aereo durante
+      il flusso) → messaggio chiaro mostrato, nessun crash/blocco.
 
-### Scenario 2 — Restore a previous purchase
+### Scenario 2 — Ripristina un acquisto precedente
 
-- [ ] With the Scenario 1 account still subscribed, reinstall the app (or sign
-      out/in fresh), sign in again → subscription screen already shows active
-      entitlement with **no** tap needed (confirms account-linked identity).
-- [ ] As a genuinely fresh/never-subscribed account, tap "Restore purchases" →
-      clear "nothing to restore" message, not an error.
+- [ ] Con l'account dello Scenario 1 ancora abbonato, reinstalla l'app (o
+      esci/rientra da zero), accedi di nuovo → la schermata abbonamento
+      mostra già l'entitlement attivo **senza** bisogno di alcun tocco
+      (conferma che l'identità è legata all'account).
+- [ ] Con un account nuovo/mai abbonato, tocca "Restore purchases" →
+      messaggio chiaro "niente da ripristinare", non un errore.
 
-### Scenario 3 — See and manage subscription status
+### Scenario 3 — Vedi e gestisci lo stato dell'abbonamento
 
-- [ ] As the subscribed account, open account settings → plan, active status,
-      renewal/expiration shown.
-- [ ] Tap "Manage subscription" → opens Play Store's native subscription
-      management.
-- [ ] As a never-subscribed account, open account settings → accurate "no
-      active subscription" state, not blank/broken.
+- [ ] Con l'account abbonato, apri le impostazioni account → piano, stato
+      attivo, rinnovo/scadenza mostrati.
+- [ ] Tocca "Manage subscription" → si apre la gestione abbonamenti nativa
+      del Play Store.
+- [ ] Con un account mai abbonato, apri le impostazioni account → stato
+      accurato "nessun abbonamento attivo", non vuoto/rotto.
 
-### Cross-cutting check
+### Verifica trasversale
 
-- [ ] As a never-subscribed account, use habits, mood logging, and the
-      timeline end to end → fully functional, nothing gated or degraded.
+- [ ] Con un account mai abbonato, usa habit, mood logging e timeline da
+      cima a fondo → tutto pienamente funzionante, niente bloccato o
+      degradato.
 
 ---
 
-## Part C — `005-ai-voice-journal` (OpenAI)
+## Parte C — `005-ai-voice-journal` (OpenAI)
 
-### One-time setup
+### Setup una tantum
 
-- [ ] Set the Edge Function secret (this is **not** an app `.env` value):
+- [ ] Imposta il secret della Edge Function (non è un valore `.env`
+      dell'app):
       ```bash
       supabase secrets set OPENAI_API_KEY=sk-...
       ```
-- [ ] Deploy the function:
+- [ ] Fai il deploy della funzione:
       ```bash
       supabase functions deploy journal-process --use-api
       ```
-- [ ] Add a short test audio fixture for the automated tests too (a few
-      seconds of clear speech, e.g. "Today was a pretty good day, I got
-      through my whole to-do list"), saved as
-      `tests/fixtures/journal-test-clip.m4a` (see
-      `tests/fixtures/README.md`). Easiest source: record it on your phone and
-      AirDrop/transfer it in, or export it from the app itself once recording
-      works.
-- [ ] Run the automated suite once the above is in place:
+- [ ] Aggiungi un breve file audio di test anche per i test automatici
+      (pochi secondi di parlato chiaro, es. "Today was a pretty good day, I
+      got through my whole to-do list"), salvato come
+      `tests/fixtures/journal-test-clip.m4a` (vedi
+      `tests/fixtures/README.md`). Fonte più semplice: registralo dal
+      telefono e trasferiscilo, oppure esportalo dall'app stessa una volta
+      che la registrazione funziona.
+- [ ] Lancia la suite automatica una volta fatto quanto sopra:
       ```bash
       npm test
       ```
-      Expect `tests/integration/journal/*.test.ts` to go from failing (404s /
-      missing-file error) to passing — these hit the real OpenAI API, so each
-      run has a small real cost (research.md §4).
+      Aspettati che `tests/integration/journal/*.test.ts` passi da fallire
+      (404 / file mancante) a verde — chiamano davvero l'API OpenAI, quindi
+      ogni run ha un piccolo costo reale (research.md §4).
 
-### Scenario 1 — Speak instead of type
+### Scenario 1 — Parla invece di scrivere
 
-- [ ] As a first-time user of the journal, open it → consent notice naming
-      OpenAI is shown before any recording is possible.
-- [ ] Acknowledge consent, record a short entry, stop → a transcript matching
-      what you said appears.
-- [ ] Repeat with the network disabled right after stopping → clear "needs a
-      connection" message; retry once reconnected succeeds without
-      re-recording.
+- [ ] Da utente al primo utilizzo del diario, aprilo → notifica di consenso
+      che nomina OpenAI viene mostrata prima che qualsiasi registrazione sia
+      possibile.
+- [ ] Conferma il consenso, registra un breve messaggio, ferma → appare un
+      transcript che corrisponde a quanto detto.
+- [ ] Ripeti con la rete disabilitata subito dopo aver fermato → messaggio
+      chiaro "serve una connessione"; il retry una volta riconnessi ha
+      successo senza dover registrare di nuovo.
 
-### Scenario 2 — Get a mood reflection
+### Scenario 2 — Ricevi una riflessione sul mood
 
-- [ ] Continuing from a successful recording → mood summary + short feedback
-      appear alongside the transcript automatically.
-- [ ] Simulate the mood-analysis step failing on its own (e.g. temporarily
-      break the model name in `supabase/functions/journal-process/index.ts`
-      and redeploy) while transcription still works → transcript still shown,
-      a "retry mood analysis" action is available and succeeds once fixed.
+- [ ] Continuando da una registrazione riuscita → mood summary + breve
+      feedback appaiono insieme al transcript automaticamente.
+- [ ] Simula il solo passaggio di analisi mood che fallisce (es. rompi
+      temporaneamente il nome del modello in
+      `supabase/functions/journal-process/index.ts` e rifai il deploy)
+      mentre la trascrizione continua a funzionare → il transcript resta
+      visibile, un'azione "retry mood analysis" è disponibile e ha successo
+      una volta sistemato.
 
-### Scenario 3 — Look back on past entries
+### Scenario 3 — Rivedi le voci passate
 
-- [ ] With several entries recorded, open history → most-recent-first, each
-      showing transcript/mood/feedback.
-- [ ] Delete one entry → gone immediately, doesn't reappear on refresh.
-- [ ] As a brand-new user, open history → empty state, not an error.
+- [ ] Con diverse voci registrate, apri lo storico → più recenti per prime,
+      ognuna con transcript/mood/feedback.
+- [ ] Elimina una voce → sparisce subito, non ricompare al refresh.
+- [ ] Da utente nuovo, apri lo storico → stato vuoto, non un errore.
 
-### Privacy check — no audio ever persists
+### Verifica privacy — l'audio non persiste mai
 
-- [ ] After a recording finishes processing, confirm: no leftover local temp
-      audio file, no Supabase Storage bucket for this feature, and the
-      `journal_entries` row has no audio column/value — only transcript/mood
-      text.
-
----
-
-## Part D — `006-now-next-widget` (Android widget)
-
-*Uses the same dev build from Part A — no separate account/secret setup.*
-
-### Scenario 1 — See what's now and next without opening the app
-
-- [ ] With an activity in progress and another later today
-      (`003-timeline-visualization`), add the widget: long-press the home
-      screen → Widgets → FocusFlow → drag "Now & Next" onto the home screen →
-      shows current + next correctly.
-- [ ] Clear today's activities (or use a fresh account) → widget shows a
-      clear "nothing scheduled" state, not blank/broken.
-- [ ] With only a later activity, nothing in progress → widget shows "nothing
-      right now" + the later activity as next.
-
-### Scenario 2 — Widget stays current on its own
-
-- [ ] With the widget showing a current activity, wait past its end time (and
-      the next one's start) **without opening the app** → within 30 minutes,
-      widget updates on its own.
-- [ ] Disable network, wait through a transition, re-enable → widget catches
-      up to the correct state on its next refresh.
-
-### Scenario 3 — Jump into the app from the widget
-
-- [ ] Tap the widget → app opens directly to the timeline, in under ~2
-      seconds.
-
-### Not-signed-in check
-
-- [ ] Sign out of the app, check the widget (may take one refresh cycle) →
-      neutral "sign in to see your schedule" state, never an error/crash/blank
-      widget.
+- [ ] Dopo che una registrazione finisce di essere processata, verifica: nessun
+      file audio temporaneo locale residuo, nessun bucket Supabase Storage per
+      questa feature, e la riga in `journal_entries` non ha colonna/valore
+      audio — solo testo di transcript/mood.
 
 ---
 
-## When everything above is checked
+## Parte D — `006-now-next-widget` (widget Android)
 
-- [ ] Update each feature's `tasks.md`, flipping the remaining `⏸️`/pending
-      tasks to `[X]`:
+*Usa la stessa development build della Parte A — nessun account/secret
+separato da configurare.*
+
+### Scenario 1 — Vedi cosa c'è ora e dopo senza aprire l'app
+
+- [ ] Con un'attività in corso e un'altra più tardi oggi
+      (`003-timeline-visualization`), aggiungi il widget: tieni premuto sulla
+      home → Widget → FocusFlow → trascina "Now & Next" sulla home → mostra
+      correttamente l'attuale + la prossima.
+- [ ] Cancella le attività di oggi (o usa un account nuovo) → il widget
+      mostra chiaramente "niente in programma", non vuoto/rotto.
+- [ ] Con solo un'attività più tardi, niente in corso → il widget mostra
+      "niente in questo momento" + la prossima attività.
+
+### Scenario 2 — Il widget si aggiorna da solo
+
+- [ ] Con il widget che mostra un'attività in corso, aspetta oltre il suo
+      orario di fine (e l'inizio della prossima) **senza aprire l'app** →
+      entro 30 minuti, il widget si aggiorna da solo.
+- [ ] Disattiva la rete, aspetta durante una transizione, riattivala → il
+      widget si allinea allo stato corretto al refresh successivo.
+
+### Scenario 3 — Passa all'app dal widget
+
+- [ ] Tocca il widget → l'app si apre direttamente sul timeline, in meno di
+      circa 2 secondi.
+
+### Verifica utente non autenticato
+
+- [ ] Esci dall'app, controlla il widget (potrebbe servire un ciclo di
+      refresh) → stato neutro "accedi per vedere il tuo programma", mai un
+      errore/crash/widget vuoto.
+
+---
+
+## Quando tutto sopra è spuntato
+
+- [ ] Aggiorna il `tasks.md` di ogni feature, portando le task `⏸️`/in
+      sospeso rimanenti a `[X]`:
   - `specs/004-subscription-monetization/tasks.md`: T010, T013, T017
-  - `specs/005-ai-voice-journal/tasks.md`: T006 (deploy), T019 (full quickstart)
+  - `specs/005-ai-voice-journal/tasks.md`: T006 (deploy), T019 (quickstart
+    completo)
   - `specs/006-now-next-widget/tasks.md`: T007, T009, T011, T012
-- [ ] If anything failed, note it here or open a fresh task/issue rather than
-      silently reverting code — then this file can be deleted once everything
-      is green and committed.
+- [ ] Se qualcosa fallisce, annotalo qui o apri una nuova task/issue invece di
+      annullare in silenzio il codice — poi questo file può essere cancellato
+      una volta che tutto è verde e committato.
