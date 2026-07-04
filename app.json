@@ -29,7 +29,23 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "NowNext",
+              "label": "Now & Next",
+              "description": "See what's happening now and what's next, at a glance.",
+              "minWidth": "250dp",
+              "minHeight": "100dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

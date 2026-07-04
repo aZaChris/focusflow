@@ -97,6 +97,33 @@ a genuine secret (never client-side). Notes:
   deployed function (`supabase functions deploy journal-process --use-api`
   after the secret is set).
 
+`006-now-next-widget` (Android home-screen widget showing the current/next
+activity) is this project's first feature whose core deliverable is native
+platform UI rather than a React Native screen — and, like `002`/`003`, adds
+**no new backend at all**: it reads `003-timeline-visualization`'s existing
+`activities` table and reuses that feature's `getNowAndNext` function
+directly rather than re-deriving the same thing. Notes:
+
+- Adds `react-native-android-widget` (Expo config plugin — widget layout is
+  still plain JSX, not hand-written Kotlin). Requires `npx expo prebuild` to
+  regenerate the native project after `app.json` changes, same dev-build
+  requirement already in place since `004`.
+- `package.json`'s `main` now points to `./index.js` instead of
+  `expo-router/entry` directly — this project's entry file reproduces what
+  `expo-router/entry` does internally so it can also call
+  `registerWidgetTaskHandler` at the same top level (native widget task
+  handlers must be registered outside the React tree, since they can run
+  headlessly). If `expo-router`'s internal entry structure changes on a
+  future upgrade, `index.js` needs revisiting too.
+- Background refresh interval is capped by the Android platform itself at a
+  minimum of 30 minutes (`updatePeriodMillis`, in the widget's `app.json`
+  config) — not a product choice.
+- Like `004`, most of this feature's own validation is manual QA on a real
+  Android device/emulator (`specs/006-now-next-widget/quickstart.md`) — no
+  headless equivalent exists for pinning a widget, observing background
+  refresh, or a home-screen tap. Only the pure `toWidgetState` logic is
+  unit-tested.
+
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 2. Log in and link this repo to your Supabase project (personal access token from
    https://supabase.com/dashboard/account/tokens if the browser login flow isn't
