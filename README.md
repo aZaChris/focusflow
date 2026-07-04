@@ -47,6 +47,31 @@ for what this version's spec needs (see
 `specs/003-timeline-visualization/research.md` §1). See
 `specs/003-timeline-visualization/quickstart.md` for its scenario walkthroughs.
 
+`004-subscription-monetization` (view/purchase/restore/manage a subscription via
+RevenueCat) is different from every prior feature: it adds **no Supabase table
+and no Edge Function at all** — RevenueCat itself, keyed to `auth.uid()` as its
+App User ID, is the entitlement system of record (see
+`specs/004-subscription-monetization/research.md` §2/§3). It does add one new
+native dependency, `react-native-purchases`, which means:
+
+- **Expo Go can no longer run this app** — you need a development build
+  (`npx expo prebuild` then `npx expo run:android` / `npx expo run:ios`, or an
+  EAS build). `expo run:android` compiles locally and is much faster than
+  waiting on an EAS cloud build queue, but needs a local Android SDK + JDK
+  toolchain (and a connected device or emulator) — see Expo's docs on
+  [running natively](https://docs.expo.dev/workflow/run-on-device/) if that's
+  not set up yet. iOS local builds need Xcode/macOS; without a Mac, EAS cloud
+  build (or a cloud Mac) is the only option.
+- Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` to RevenueCat's
+  **public/publishable** key only (Project Settings → API Keys) — never the
+  secret REST API key (Principle VII).
+- Testing the actual purchase/restore/manage flow requires a sandbox tester
+  account (App Store Connect "Sandbox Testers" / Play Console license testing)
+  and cannot be exercised by `npm test` — see
+  `specs/004-subscription-monetization/research.md` §4 and
+  `specs/004-subscription-monetization/quickstart.md` for the manual QA steps.
+  Everything else (the entitlement-derivation logic) is unit-tested as usual.
+
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 2. Log in and link this repo to your Supabase project (personal access token from
    https://supabase.com/dashboard/account/tokens if the browser login flow isn't

@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, View, Pressable } from 'react-nativ
 import { useSession } from '@/features/auth/hooks/useSession';
 import { useDeleteAccount } from '@/features/auth/hooks/useDeleteAccount';
 import { useMfa } from '@/features/auth/hooks/useMfa';
+import { useEntitlement } from '@/features/subscription/hooks/useEntitlement';
 
 type MfaStep = 'idle' | 'enrolling' | 'backup-codes' | 'enabled' | 'disabling';
 
@@ -10,6 +11,7 @@ export default function SettingsScreen() {
   const { signOut } = useSession();
   const { deleteAccount, isDeleting } = useDeleteAccount();
   const { enroll, verifyFactor, generateBackupCodes, disableMfa, isBusy } = useMfa();
+  const entitlement = useEntitlement();
   const [error, setError] = useState<string | null>(null);
 
   const [mfaStep, setMfaStep] = useState<MfaStep>('idle');
@@ -20,9 +22,14 @@ export default function SettingsScreen() {
 
   function confirmDelete() {
     // User Story 5, Acceptance Scenario 1: explicit confirmation before an irreversible action.
+    // FR-013 (004-subscription-monetization): deleting the account does not cancel
+    // an in-store subscription, which keeps billing until cancelled separately.
+    const message = entitlement.isActive
+      ? 'This permanently deletes your account and all your data. This cannot be undone. Note: this does NOT cancel your active subscription — cancel it separately from Manage subscription first if you don’t want to keep being billed.'
+      : 'This permanently deletes your account and all your data. This cannot be undone.';
     Alert.alert(
       'Delete your account?',
-      'This permanently deletes your account and all your data. This cannot be undone.',
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         {
