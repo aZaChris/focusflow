@@ -72,6 +72,31 @@ native dependency, `react-native-purchases`, which means:
   `specs/004-subscription-monetization/quickstart.md` for the manual QA steps.
   Everything else (the entitlement-derivation logic) is unit-tested as usual.
 
+`005-ai-voice-journal` (record → transcribe → mood summary/feedback → history)
+is this project's first new Edge Function since `001-user-auth`:
+`journal-process`, which proxies OpenAI (transcription + mood analysis) — the
+only reason a server-side piece is needed at all is that the OpenAI API key is
+a genuine secret (never client-side). Notes:
+
+- Set the secret before deploying/using it: `supabase secrets set
+  OPENAI_API_KEY=sk-...` — **never** in `.env`/`.env.example`; it's not a
+  publishable key like the Supabase anon key or RevenueCat's key (Principle
+  VII).
+- No Storage bucket, no `service_role` use anywhere in this feature — raw
+  audio is never persisted, only proxied in memory through the Edge Function
+  and then discarded (see `specs/005-ai-voice-journal/research.md` §2/§6).
+- Adds `expo-audio` (recording) and `expo-file-system` (deleting the local
+  recording immediately after upload) — no new native-module constraint beyond
+  what `004` already introduced (a dev build was already required).
+- Unlike `004`, this feature's integration tests **do** call the real,
+  deployed Edge Function (and in turn real OpenAI) — genuine coverage, not a
+  mock, at a small real cost per test run (see
+  `specs/005-ai-voice-journal/research.md` §4). They need
+  `tests/fixtures/journal-test-clip.m4a` (a few seconds of clear speech — see
+  `tests/fixtures/README.md` for how to add it; not yet checked in) and a
+  deployed function (`supabase functions deploy journal-process --use-api`
+  after the secret is set).
+
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 2. Log in and link this repo to your Supabase project (personal access token from
    https://supabase.com/dashboard/account/tokens if the browser login flow isn't
