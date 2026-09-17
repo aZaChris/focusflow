@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase/client';
 import { logEvent } from '@/lib/logging/logger';
+import { Screen, Title, ErrorText } from '@/components/ui';
 
 type Status = 'pending' | 'verifying' | 'verified' | 'error';
 
@@ -43,8 +44,8 @@ export default function VerifyScreen() {
   }, [incomingUrl]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Confirm your email</Text>
+    <Screen centered>
+      <Title>Confirm your email</Title>
       {status === 'pending' && (
         <Text accessibilityLiveRegion="polite">
           We sent a verification link to {email ?? 'your email'}. Open it on this device to
@@ -56,16 +57,8 @@ export default function VerifyScreen() {
         <Text accessibilityLiveRegion="polite">Email verified — you're all set.</Text>
       )}
       {status === 'error' && (
-        <Text style={styles.error} accessibilityLiveRegion="polite">
-          That verification link is invalid or expired. Please request a new one.
-        </Text>
+        <ErrorText>That verification link is invalid or expired. Please request a new one.</ErrorText>
       )}
-    </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 12 },
-  error: { color: '#c00' },
-});

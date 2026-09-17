@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { Text } from 'react-native';
 import { usePasswordReset } from '@/features/auth/hooks/usePasswordReset';
+import { Screen, Title, TextField, Button } from '@/components/ui';
 
 export default function ForgotPasswordScreen() {
   const { requestReset, isSubmitting } = usePasswordReset();
@@ -14,16 +15,15 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Reset your password</Text>
+    <Screen centered>
+      <Title>Reset your password</Title>
       {sent ? (
         <Text accessibilityLiveRegion="polite">
           If an account exists for {email}, a reset link is on its way.
         </Text>
       ) : (
         <>
-          <TextInput
-            style={styles.input}
+          <TextField
             placeholder="Email"
             accessibilityLabel="Email"
             autoCapitalize="none"
@@ -32,25 +32,9 @@ export default function ForgotPasswordScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <Pressable
-            style={styles.button}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel="Send reset link"
-          >
-            <Text style={styles.buttonText}>{isSubmitting ? 'Sending…' : 'Send reset link'}</Text>
-          </Pressable>
+          <Button title={isSubmitting ? 'Sending…' : 'Send reset link'} onPress={handleSubmit} disabled={isSubmitting} />
         </>
       )}
-    </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-});

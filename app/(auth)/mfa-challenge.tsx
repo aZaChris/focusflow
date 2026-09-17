@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { Text, StyleSheet, Pressable } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMfa } from '@/features/auth/hooks/useMfa';
+import { Screen, Title, TextField, Button, ErrorText } from '@/components/ui';
+import { spacing } from '@/theme/tokens';
 
 export default function MfaChallengeScreen() {
   const { factorId } = useLocalSearchParams<{ factorId: string }>();
@@ -25,12 +27,11 @@ export default function MfaChallengeScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Two-factor verification</Text>
+    <Screen centered>
+      <Title>Two-factor verification</Title>
       {usingBackupCode ? (
         <>
-          <TextInput
-            style={styles.input}
+          <TextField
             placeholder="Email"
             accessibilityLabel="Email"
             autoCapitalize="none"
@@ -39,8 +40,7 @@ export default function MfaChallengeScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <TextInput
-            style={styles.input}
+          <TextField
             placeholder="Password"
             accessibilityLabel="Password"
             secureTextEntry
@@ -48,8 +48,7 @@ export default function MfaChallengeScreen() {
             value={password}
             onChangeText={setPassword}
           />
-          <TextInput
-            style={styles.input}
+          <TextField
             placeholder="Backup code"
             accessibilityLabel="Backup code"
             autoCapitalize="characters"
@@ -58,8 +57,7 @@ export default function MfaChallengeScreen() {
           />
         </>
       ) : (
-        <TextInput
-          style={styles.input}
+        <TextField
           placeholder="6-digit code"
           accessibilityLabel="6-digit authentication code"
           keyboardType="number-pad"
@@ -67,20 +65,8 @@ export default function MfaChallengeScreen() {
           onChangeText={setCode}
         />
       )}
-      {error ? (
-        <Text style={styles.error} accessibilityLiveRegion="polite">
-          {error}
-        </Text>
-      ) : null}
-      <Pressable
-        style={styles.button}
-        onPress={handleSubmit}
-        disabled={isBusy}
-        accessibilityRole="button"
-        accessibilityLabel="Verify"
-      >
-        <Text style={styles.buttonText}>{isBusy ? 'Verifying…' : 'Verify'}</Text>
-      </Pressable>
+      {error ? <ErrorText>{error}</ErrorText> : null}
+      <Button title={isBusy ? 'Verifying…' : 'Verify'} onPress={handleSubmit} disabled={isBusy} accessibilityLabel="Verify" />
       <Pressable
         onPress={() => setUsingBackupCode((v) => !v)}
         accessibilityRole="button"
@@ -92,16 +78,10 @@ export default function MfaChallengeScreen() {
           {usingBackupCode ? 'Use your authenticator app instead' : 'Use a backup code instead'}
         </Text>
       </Pressable>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  error: { color: '#c00' },
-  link: { textAlign: 'center', marginTop: 8 },
+  link: { textAlign: 'center', marginTop: spacing.sm },
 });
