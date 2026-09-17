@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { Text } from 'react-native';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase/client';
 import { logEvent } from '@/lib/logging/logger';
 import { usePasswordReset } from '@/features/auth/hooks/usePasswordReset';
+import { Screen, Title, TextField, Button, ErrorText } from '@/components/ui';
 
 type LinkStatus = 'pending' | 'ready' | 'error';
 
@@ -51,18 +52,15 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Set a new password</Text>
+    <Screen centered>
+      <Title>Set a new password</Title>
       {linkStatus === 'pending' && <Text accessibilityLiveRegion="polite">Confirming your reset link…</Text>}
       {linkStatus === 'error' && (
-        <Text style={styles.error} accessibilityLiveRegion="polite">
-          This reset link is invalid or expired. Please request a new one.
-        </Text>
+        <ErrorText>This reset link is invalid or expired. Please request a new one.</ErrorText>
       )}
       {linkStatus === 'ready' && (
         <>
-          <TextInput
-            style={styles.input}
+          <TextField
             placeholder="New password"
             accessibilityLabel="New password"
             secureTextEntry
@@ -70,31 +68,15 @@ export default function ResetPasswordScreen() {
             value={password}
             onChangeText={setPassword}
           />
-          {error ? (
-            <Text style={styles.error} accessibilityLiveRegion="polite">
-              {error}
-            </Text>
-          ) : null}
-          <Pressable
-            style={styles.button}
+          {error ? <ErrorText>{error}</ErrorText> : null}
+          <Button
+            title={isSubmitting ? 'Saving…' : 'Save new password'}
             onPress={handleSubmit}
             disabled={isSubmitting}
-            accessibilityRole="button"
             accessibilityLabel="Save new password"
-          >
-            <Text style={styles.buttonText}>{isSubmitting ? 'Saving…' : 'Save new password'}</Text>
-          </Pressable>
+          />
         </>
       )}
-    </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  error: { color: '#c00' },
-});

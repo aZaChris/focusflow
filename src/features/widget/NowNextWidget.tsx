@@ -1,6 +1,9 @@
+'use no memo';
+
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 import type { HexColor } from 'react-native-android-widget';
 import type { WidgetState } from '@/features/widget/widgetState';
+import { color } from '@/theme/tokens';
 
 function Line({ text, color, bold }: { text: string; color: HexColor; bold?: boolean }) {
   return (
@@ -42,7 +45,7 @@ export function NowNextWidget({ state }: { state: WidgetState }) {
         width: 'match_parent',
         flexDirection: 'column',
         justifyContent: 'center',
-        backgroundColor: '#111111',
+        backgroundColor: color.text as HexColor,
         borderRadius: 16,
         padding: 12,
       }}
@@ -51,7 +54,7 @@ export function NowNextWidget({ state }: { state: WidgetState }) {
       {state.kind === 'empty' && <Line text="Nothing scheduled today" color="#aaaaaa" />}
       {state.kind === 'nothing_left' && <Line text="Nothing scheduled right now" color="#aaaaaa" />}
       {(state.kind === 'current_and_next' || state.kind === 'current_only') && (
-        <Line text={`Now: ${state.current.title}`} color="#ffffff" bold />
+        <Line text={`Now: ${state.current.title}`} color={color.primary as HexColor} bold />
       )}
       {state.kind === 'next_only' && <Line text="Nothing right now" color="#aaaaaa" />}
       {(state.kind === 'current_and_next' || state.kind === 'next_only') && (

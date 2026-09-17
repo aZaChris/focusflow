@@ -12,7 +12,7 @@ export type SignUpResult = { ok: true } | { ok: false; message: string };
 export function useSignUp() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function signUp(email: string, password: string): Promise<SignUpResult> {
+  async function signUp(email: string, password: string, fullName?: string): Promise<SignUpResult> {
     const parsed = signUpSchema.safeParse({ email, password });
     if (!parsed.success) {
       return { ok: false, message: parsed.error.issues[0]?.message ?? 'Invalid email or password' };
@@ -23,7 +23,13 @@ export function useSignUp() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: Linking.createURL('/verify') },
+        options: {
+          emailRedirectTo: Linking.createURL('/verify'),
+          // Handoff Register screen's "Full name" field — stored in Supabase's
+          // standard user_metadata, no schema change needed. Used for avatar
+          // initials/profile display in Settings.
+          data: fullName ? { full_name: fullName } : undefined,
+        },
       });
 
       if (error) {

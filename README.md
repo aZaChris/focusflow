@@ -124,6 +124,34 @@ directly rather than re-deriving the same thing. Notes:
   refresh, or a home-screen tap. Only the pure `toWidgetState` logic is
   unit-tested.
 
+`007-lockscreen-timeline` (Android lock-screen timeline, opt-in) extends
+`006`: same current/next data (via a shared `buildNowNextState`, extracted
+from `006`'s task handler so both surfaces can never disagree), delivered as
+an ongoing/sticky notification instead of a widget, since Android hasn't
+supported generic third-party lock-screen widgets since Android 5.0. Notes:
+
+- Adds `expo-notifications` (the ongoing notification itself),
+  `expo-background-task` + `expo-task-manager` (periodic refresh independent
+  of whether `006`'s home-screen widget is pinned — its own refresh only
+  fires when a widget instance actually exists).
+- Off by default (Settings → "Show now/next on your lock screen"). Turning it
+  on requests the Android 13+ notification permission first; denial leaves
+  it off with an explicit message rather than failing silently.
+- The lock-screen notification's content is text/glyphs (`▸ Now: … → Next:
+  …`), not a rendered image — `expo-notifications`' Android builder currently
+  hardcodes `BigTextStyle` (a real upstream limitation, not this project's
+  choice), so a custom bitmap `BigPictureStyle` isn't reliably supported yet.
+  The full graphical "block/level" visual lives in-app instead
+  (Settings → "View visual timeline"), with no such constraint.
+- Notification visibility is set to `PRIVATE` on its channel, so Android's own
+  "hide sensitive content when locked" system setting substitutes a generic
+  placeholder automatically — no custom redaction logic here.
+- As with `006`, actually posting/observing the notification, background-task
+  timing, and the permission prompt are manual QA
+  (`specs/007-lockscreen-timeline/quickstart.md`) — the pure block-strip
+  formatting, preference persistence, and the in-app visual component are
+  unit-tested.
+
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 2. Log in and link this repo to your Supabase project (personal access token from
    https://supabase.com/dashboard/account/tokens if the browser login flow isn't

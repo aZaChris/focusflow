@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useSignIn } from '@/features/auth/hooks/useSignIn';
+import { Screen, Title, TextField, Button, ErrorText, FoxMark } from '@/components/ui';
+import { color, font, fontSize, spacing } from '@/theme/tokens';
 
+// Handoff: centered fox mark + title + subtitle, 52px fields, "Forgot
+// password?" right-aligned. No "Continue with Apple" here — the mockup shows
+// one, but this app has no Apple Sign-In integration to back it (no OAuth
+// provider wired up); a decorative button that does nothing on tap would be
+// worse than omitting it.
 export default function LoginScreen() {
   const { signIn, isSubmitting } = useSignIn();
   const [email, setEmail] = useState('');
@@ -24,10 +31,14 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign in</Text>
-      <TextInput
-        style={styles.input}
+    <Screen centered>
+      <View style={styles.header}>
+        <FoxMark size={64} />
+        <Title style={styles.title}>FocusFlow</Title>
+        <Text style={styles.subtitle}>Calm focus, every day.</Text>
+      </View>
+
+      <TextField
         placeholder="Email"
         accessibilityLabel="Email"
         autoCapitalize="none"
@@ -36,8 +47,7 @@ export default function LoginScreen() {
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
+      <TextField
         placeholder="Password"
         accessibilityLabel="Password"
         secureTextEntry
@@ -45,36 +55,24 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      {error ? (
-        <Text style={styles.error} accessibilityLiveRegion="polite">
-          {error}
-        </Text>
-      ) : null}
-      <Pressable
-        style={styles.button}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-        accessibilityRole="button"
-        accessibilityLabel="Sign in"
-      >
-        <Text style={styles.buttonText}>{isSubmitting ? 'Signing in…' : 'Sign in'}</Text>
-      </Pressable>
-      <Link href="/(auth)/forgot-password" style={styles.link} accessibilityRole="link">
-        Forgot your password?
+      <Link href="/(auth)/forgot-password" style={styles.forgotLink} accessibilityRole="link">
+        Forgot password?
       </Link>
-      <Link href="/(auth)/register" style={styles.link} accessibilityRole="link">
+
+      {error ? <ErrorText>{error}</ErrorText> : null}
+      <Button title={isSubmitting ? 'Signing in…' : 'Log in'} onPress={handleSubmit} disabled={isSubmitting} accessibilityLabel="Sign in" />
+
+      <Link href="/(auth)/register" style={styles.footerLink} accessibilityRole="link">
         Need an account? Sign up
       </Link>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  error: { color: '#c00' },
-  link: { textAlign: 'center', marginTop: 8 },
+  header: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  title: { marginTop: spacing.sm },
+  subtitle: { fontSize: fontSize.base, fontFamily: font.regular, color: color.textSecondary },
+  forgotLink: { alignSelf: 'flex-end', fontSize: 13, fontFamily: font.regular, color: color.textSecondary },
+  footerLink: { textAlign: 'center', marginTop: spacing.sm, fontFamily: font.regular, color: color.textSecondary },
 });

@@ -4,11 +4,13 @@ import type { Session } from '@supabase/supabase-js';
 import Purchases from 'react-native-purchases';
 import { supabase } from '@/lib/supabase/client';
 import { logEvent } from '@/lib/logging/logger';
+import { isPurchasesConfigured } from '@/lib/purchases/client';
 
 // research.md §2 (004-subscription-monetization): RevenueCat's App User ID is
 // kept equal to our own auth.uid(), so entitlement follows the account, not the
 // device — Purchases.logIn/logOut mirror Supabase's own sign-in/sign-out exactly.
 async function syncPurchasesIdentity(newSession: Session | null): Promise<void> {
+  if (!isPurchasesConfigured) return;
   if (newSession) {
     await Purchases.logIn(newSession.user.id);
   } else {

@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useSignUp } from '@/features/auth/hooks/useSignUp';
+import { Screen, Title, TextField, Button, ErrorText, FoxMark } from '@/components/ui';
+import { color, font, fontSize, spacing } from '@/theme/tokens';
 
 export default function RegisterScreen() {
   const { signUp, isSubmitting } = useSignUp();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     setError(null);
-    const result = await signUp(email, password);
+    const result = await signUp(email, password, fullName.trim() || undefined);
     if (!result.ok) {
       setError(result.message);
       return;
@@ -20,10 +23,14 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create your account</Text>
-      <TextInput
-        style={styles.input}
+    <Screen centered>
+      <View style={styles.header}>
+        <FoxMark size={56} />
+        <Title style={styles.title}>Create your account</Title>
+      </View>
+
+      <TextField placeholder="Full name" accessibilityLabel="Full name" textContentType="name" value={fullName} onChangeText={setFullName} />
+      <TextField
         placeholder="Email"
         accessibilityLabel="Email"
         autoCapitalize="none"
@@ -32,8 +39,7 @@ export default function RegisterScreen() {
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
+      <TextField
         placeholder="Password"
         accessibilityLabel="Password"
         secureTextEntry
@@ -41,33 +47,19 @@ export default function RegisterScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      {error ? (
-        <Text style={styles.error} accessibilityLiveRegion="polite">
-          {error}
-        </Text>
-      ) : null}
-      <Pressable
-        style={styles.button}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-        accessibilityRole="button"
-        accessibilityLabel="Sign up"
-      >
-        <Text style={styles.buttonText}>{isSubmitting ? 'Creating account…' : 'Sign up'}</Text>
-      </Pressable>
-      <Link href="/(auth)/login" style={styles.link} accessibilityRole="link">
+      {error ? <ErrorText>{error}</ErrorText> : null}
+      <Button title={isSubmitting ? 'Creating account…' : 'Create account'} onPress={handleSubmit} disabled={isSubmitting} accessibilityLabel="Sign up" />
+      <Text style={styles.terms}>By continuing you agree to our Terms and Privacy Policy.</Text>
+      <Link href="/(auth)/login" style={styles.footerLink} accessibilityRole="link">
         Already have an account? Sign in
       </Link>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#111', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  error: { color: '#c00' },
-  link: { textAlign: 'center', marginTop: 8 },
+  header: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  title: { fontSize: fontSize.xl, textAlign: 'center' },
+  terms: { fontSize: 12, fontFamily: font.regular, color: color.textSubtle, textAlign: 'center' },
+  footerLink: { textAlign: 'center', marginTop: spacing.sm, fontFamily: font.regular, color: color.textSecondary },
 });
