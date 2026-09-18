@@ -38,14 +38,14 @@ describe('getEntitlementStatus', () => {
         identifier: ENTITLEMENT_ID,
         willRenew: true,
         expirationDate: '2026-08-04T00:00:00Z',
-        productIdentifier: 'focusflow_premium_monthly',
+        productIdentifier: 'foxus_premium_monthly',
       },
     });
     expect(getEntitlementStatus(info, ENTITLEMENT_ID)).toEqual({
       isActive: true,
       willRenew: true,
       expirationDate: '2026-08-04T00:00:00Z',
-      productIdentifier: 'focusflow_premium_monthly',
+      productIdentifier: 'foxus_premium_monthly',
     });
   });
 

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "FocusFlow",
-    "slug": "focusflow",
+    "name": "Foxus",
+    "slug": "foxus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "focusflow",
+    "scheme": "foxus",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"

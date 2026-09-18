@@ -23,7 +23,7 @@ Da fare una volta sola; sblocca tutte e tre le feature qui sotto.
       Create Device), **oppure** collega un telefono Android reale con il
       debug USB attivo (Impostazioni → Info telefono → tocca 7 volte "Numero
       build", poi Impostazioni → Opzioni sviluppatore → Debug USB).
-- [ ] Da `focusflow-rewrite/`, genera il progetto Android nativo:
+- [ ] Da `foxus/`, genera il progetto Android nativo:
       ```bash
       npx expo prebuild
       ```
@@ -44,7 +44,7 @@ Da fare una volta sola; sblocca tutte e tre le feature qui sotto.
 
 - [ ] Progetto RevenueCat creato, con l'app Android aggiunta e la sua API key
       copiata.
-- [ ] Imposta `EXPO_PUBLIC_REVENUECAT_API_KEY` in `focusflow-rewrite/.env` con
+- [ ] Imposta `EXPO_PUBLIC_REVENUECAT_API_KEY` in `foxus/.env` con
       quella chiave **pubblica** (mai una chiave segreta — Principio VII).
 - [ ] Su RevenueCat: un entitlement (deve corrispondere a
       `ENTITLEMENT_ID = 'premium'` in
@@ -166,7 +166,7 @@ separato da configurare.*
 
 - [ ] Con un'attività in corso e un'altra più tardi oggi
       (`003-timeline-visualization`), aggiungi il widget: tieni premuto sulla
-      home → Widget → FocusFlow → trascina "Now & Next" sulla home → mostra
+      home → Widget → Foxus → trascina "Now & Next" sulla home → mostra
       correttamente l'attuale + la prossima.
 - [ ] Cancella le attività di oggi (o usa un account nuovo) → il widget
       mostra chiaramente "niente in programma", non vuoto/rotto.

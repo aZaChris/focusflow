@@ -16,17 +16,17 @@ function Line({ text, color, bold }: { text: string; color: HexColor; bold?: boo
 function widgetAccessibilityLabel(state: WidgetState): string {
   switch (state.kind) {
     case 'signed_out':
-      return 'Sign in to see your schedule. Tap to open FocusFlow.';
+      return 'Sign in to see your schedule. Tap to open Foxus.';
     case 'empty':
-      return 'Nothing scheduled today. Tap to open FocusFlow.';
+      return 'Nothing scheduled today. Tap to open Foxus.';
     case 'nothing_left':
-      return 'Nothing scheduled right now. Tap to open FocusFlow.';
+      return 'Nothing scheduled right now. Tap to open Foxus.';
     case 'current_and_next':
-      return `Now: ${state.current.title}. Next: ${state.next.title} at ${state.next.start_time}. Tap to open FocusFlow.`;
+      return `Now: ${state.current.title}. Next: ${state.next.title} at ${state.next.start_time}. Tap to open Foxus.`;
     case 'current_only':
-      return `Now: ${state.current.title}. Nothing else today. Tap to open FocusFlow.`;
+      return `Now: ${state.current.title}. Nothing else today. Tap to open Foxus.`;
     case 'next_only':
-      return `Nothing right now. Next: ${state.next.title} at ${state.next.start_time}. Tap to open FocusFlow.`;
+      return `Nothing right now. Next: ${state.next.title} at ${state.next.start_time}. Tap to open Foxus.`;
   }
 }
 

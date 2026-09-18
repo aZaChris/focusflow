@@ -86,7 +86,7 @@ export default function JournalScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Voice journal</Text>
         <Text style={styles.consentBody}>
-          FocusFlow sends your voice recording to OpenAI to transcribe it and read the
+          Foxus sends your voice recording to OpenAI to transcribe it and read the
           transcript to suggest a mood summary and short feedback. Recordings are
           discarded immediately after processing — only the text transcript and mood
           summary are saved to your account.

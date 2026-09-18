@@ -33,7 +33,7 @@ export default function SubscriptionScreen() {
   }
 
   // FR-007: reach the platform's native subscription management (App Store /
-  // Play Store) — not something FocusFlow builds itself (Principle II).
+  // Play Store) — not something Foxus builds itself (Principle II).
   async function handleManage() {
     setError(null);
     try {

@@ -1,5 +1,5 @@
 {
-  "name": "focusflow-rewrite",
+  "name": "foxus",
   "main": "./index.js",
   "version": "1.0.0",
   "dependencies": {

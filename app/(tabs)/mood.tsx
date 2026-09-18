@@ -39,7 +39,7 @@ export default function MoodScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Mood check-ins</Text>
         <Text style={styles.consentBody}>
-          FocusFlow can save quick mood and energy check-ins so you can look back on
+          Foxus can save quick mood and energy check-ins so you can look back on
           patterns later. This is stored privately and only ever tied to your account.
         </Text>
         <Pressable

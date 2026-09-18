@@ -72,7 +72,7 @@ describe('password reset (Scenario 3)', () => {
     const anon = createClient(API_URL, ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
 
     const { error } = await anon.auth.resetPasswordForEmail(email, {
-      redirectTo: 'focusflow://reset-password',
+      redirectTo: 'foxus://reset-password',
     });
     expect(error).toBeNull();
   });
