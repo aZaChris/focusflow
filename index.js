@@ -11,6 +11,10 @@ import { App } from 'expo-router/build/qualified-entry';
 import { renderRootComponent } from 'expo-router/build/renderRootComponent';
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
 import { widgetTaskHandler } from './src/features/widget/widgetTaskHandler';
+// Defines the headless background task (007-lockscreen-timeline) as a side
+// effect of this import — same reason it has to sit here and not in a
+// component, see that file's own comment.
+import './src/features/lockscreen/backgroundTask';
 
 renderRootComponent(App);
 registerWidgetTaskHandler(widgetTaskHandler);

@@ -124,6 +124,37 @@ directly rather than re-deriving the same thing. Notes:
   refresh, or a home-screen tap. Only the pure `toWidgetState` logic is
   unit-tested.
 
+`007-lockscreen-timeline` (an opt-in notification that shows the current/next
+activity on the lock screen) reuses `006`'s data layer directly — the
+Supabase fetch + now/next derivation was pulled out of `widgetTaskHandler.tsx`
+into `src/features/widget/buildWidgetState.ts` so both surfaces read the same
+`WidgetState`, instead of the widget and the notification each keeping their
+own copy of that query. Notes:
+
+- Adds `@notifee/react-native` (expo-notifications isn't installed in this
+  rewrite, and doesn't expose ongoing/low-importance/lock-screen-visible
+  notifications) and `expo-task-manager`/`expo-background-task` (periodic
+  background refresh independent of whether the `006` widget is pinned —
+  reusing the widget's own AppWidgetManager-driven refresh isn't an option,
+  since that only fires when a widget instance actually exists on a home
+  screen).
+- The notification's expanded content is text plus an ASCII progress bar
+  (`src/features/lockscreen/content.ts`), not a bitmap crop of the real
+  timeline canvas — a pixel snapshot needs a headless render pass (there's no
+  screen when this refreshes with the app closed, same constraint as `006`'s
+  background refresh), which is a much larger native-Android undertaking than
+  this first version needed. See the `ponytail:` comment in `content.ts` for
+  the upgrade path.
+- Toggle state lives in `expo-secure-store` (already a dependency) rather than
+  adding a storage library for one boolean.
+- Background refresh interval is a 15-minute *minimum* — same Android
+  WorkManager floor `expo-background-task` sits on, the OS still batches and
+  delays beyond it.
+- Like `004`/`006`, this feature's own validation is manual QA on a real
+  Android device (`QA_CHECKLIST.md` Part E) — no headless equivalent for lock
+  screen visibility or background delivery timing. Only `buildLockscreenContent`
+  is unit-tested.
+
 1. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
 2. Log in and link this repo to your Supabase project (personal access token from
    https://supabase.com/dashboard/account/tokens if the browser login flow isn't

@@ -194,6 +194,34 @@ separato da configurare.*
 
 ---
 
+## Parte E — `007-lockscreen-timeline` (notifica lock screen)
+
+*Usa la stessa development build della Parte A. Richiede il permesso notifiche
+su Android 13+.*
+
+### Scenario 1 — Attiva e verifica sul lock screen
+
+- [ ] Impostazioni → attiva "Timeline sul lock screen" → concedi il permesso
+      notifiche se richiesto.
+- [ ] Blocca lo schermo → la notifica appare, sotto le altre notifiche e sotto
+      data/ora, senza dover sbloccare.
+- [ ] Con un'attività in corso → mostra "Ora: <titolo>" e la barra di
+      avanzamento coerente con l'orario reale.
+- [ ] Espandi la notifica → vedi anche la prossima attività (se presente).
+
+### Scenario 2 — Si aggiorna da sola
+
+- [ ] Con la notifica attiva, aspetta oltre il cambio di attività **senza
+      aprire l'app** → entro ~15-30 minuti si aggiorna da sola (limite di
+      Android sul lavoro in background, non scelta del prodotto).
+
+### Scenario 3 — Disattiva
+
+- [ ] Impostazioni → disattiva il toggle → la notifica sparisce subito e non
+      ricompare.
+
+---
+
 ## Quando tutto sopra è spuntato
 
 - [ ] Aggiorna il `tasks.md` di ogni feature, portando le task `⏸️`/in

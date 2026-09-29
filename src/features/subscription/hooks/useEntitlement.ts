@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Purchases from 'react-native-purchases';
 import { getEntitlementStatus, type EntitlementStatus } from '@/features/subscription/entitlement';
 import { logEvent } from '@/lib/logging/logger';
+import { isPurchasesConfigured } from '@/lib/purchases/client';
 
 // The entitlement identifier configured in the RevenueCat dashboard (data-model.md).
 export const ENTITLEMENT_ID = 'premium';
@@ -20,6 +21,9 @@ export function useEntitlement() {
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    // Same guard as useSession's syncPurchasesIdentity: calling the native SDK
+    // before Purchases.configure() has run is a hard crash, not a no-op.
+    if (!isPurchasesConfigured()) return;
     try {
       const customerInfo = await Purchases.getCustomerInfo();
       setStatus(getEntitlementStatus(customerInfo, ENTITLEMENT_ID));
@@ -31,6 +35,7 @@ export function useEntitlement() {
   useEffect(() => {
     refresh().finally(() => setIsLoading(false));
 
+    if (!isPurchasesConfigured()) return;
     const listener = (customerInfo: import('react-native-purchases').CustomerInfo) => {
       setStatus(getEntitlementStatus(customerInfo, ENTITLEMENT_ID));
     };

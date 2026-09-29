@@ -3,8 +3,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useSession } from '@/features/auth/hooks/useSession';
 import { shouldRedirectToLogin } from '@/features/auth/routeGuard';
 import { configurePurchases } from '@/lib/purchases/client';
+import { ThemeProvider } from '@/theme/ThemeContext';
 
-export default function RootLayout() {
+function RootNavigator() {
   const { session, isLoading } = useSession();
   const segments = useSegments();
   const router = useRouter();
@@ -22,4 +23,12 @@ export default function RootLayout() {
   }, [session, isLoading, segments, router]);
 
   return <Stack screenOptions={{ headerShown: false }} />;
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
+  );
 }

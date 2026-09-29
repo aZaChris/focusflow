@@ -3,11 +3,18 @@
 // contain obvious credential material in staged file contents.
 const { execFileSync } = require('node:child_process');
 
+const JWT_PATTERN = /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/;
+
 const PATTERNS = [
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'private key'],
   [/sk-[a-zA-Z0-9]{20,}/, 'OpenAI-style secret key'],
   [/AKIA[0-9A-Z]{16}/, 'AWS access key ID'],
-  [/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/, 'JWT (possible service-role key)'],
+  // Checked per-line below instead of over the whole file: a JWT on a line
+  // whose key is EXPO_PUBLIC_* (eas.json, .env.example) is the Supabase anon
+  // key — public-by-design, safe to ship in the built app (Principle VII).
+  // Same JWT shape on any other line (e.g. a real SUPABASE_SERVICE_ROLE_KEY)
+  // must still block the commit.
+  [JWT_PATTERN, 'JWT (possible service-role key)', { perLine: true }],
 ];
 
 const staged = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACM'], {
@@ -29,8 +36,16 @@ for (const file of staged) {
   } catch {
     continue; // deleted or binary file
   }
-  for (const [pattern, label] of PATTERNS) {
-    if (pattern.test(content)) {
+  for (const [pattern, label, opts] of PATTERNS) {
+    if (opts?.perLine) {
+      const hit = content
+        .split('\n')
+        .some((line) => pattern.test(line) && !/EXPO_PUBLIC_/.test(line));
+      if (hit) {
+        console.error(`✖ Possible ${label} found in ${file}`);
+        found = true;
+      }
+    } else if (pattern.test(content)) {
       console.error(`✖ Possible ${label} found in ${file}`);
       found = true;
     }
